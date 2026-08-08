@@ -1,0 +1,20 @@
+# This repository is PUBLIC — GitHub Pages serves free sites only from public repos.
+# Nothing here may name a client, a developer, or anything about the delivery process.
+# The board itself lives in the separate PRIVATE devsamosa-data repo. See GITHUB-SETUP.md.
+
+# Project notes: names real clients and team process. Never publish.
+CLAUDE.md
+
+# The starter roster: 18 real developers and 13 client project names.
+# This is what you restore from on first setup. It must never be published.
+starter-board.json
+
+# Local data and backups, in case one ever lands in this folder
+devsamosa-backup-*.json
+board.json
+shared.json
+people/
+
+node_modules/
+.DS_Store
+Thumbs.db
