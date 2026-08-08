@@ -3254,7 +3254,12 @@ function seed(){
     await initStore();
     await load();
     const s=await getSession();
-    if(s&&DB.pass&&s.role==='admin'){ADMIN=true;enter()}else lockScreen();
+    if(s&&DB.pass&&s.role==='admin'){ADMIN=true;enter()}
+    /* nothing stored and no board yet — almost always someone opening the hosted
+       URL for the first time, so offer the team board rather than a local-only
+       login they'd have to undo. "Use this device only" is right there on it. */
+    else if(!DB.pass&&/^(local|memory)$/.test(STORE.mode))ghConnect();
+    else lockScreen();
   }catch(e){
     console.error(e);
     document.getElementById('lock').classList.remove('hidden');
