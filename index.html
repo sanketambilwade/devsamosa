@@ -285,12 +285,16 @@ td.n,th.n{text-align:right;white-space:nowrap}
 .shake{animation:sh .42s}
 @keyframes sh{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
 
+/* opacity does the hiding, not the slide: translating 150% only moves it by its
+   own height, which left the pill (and its last message) parked over the table */
 #toast{position:fixed;bottom:calc(88px + var(--safe-b));left:50%;transform:translate(-50%,150%);z-index:99;
+  opacity:0;pointer-events:none;
   background:var(--glass);backdrop-filter:saturate(180%) blur(30px);-webkit-backdrop-filter:saturate(180%) blur(30px);
   border:1px solid var(--stroke);border-radius:980px;padding:11px 20px;font-size:14px;font-weight:500;
-  transition:transform .34s cubic-bezier(.2,.9,.3,1);box-shadow:var(--shadow);max-width:88vw;text-align:center}
+  transition:transform .34s cubic-bezier(.2,.9,.3,1),opacity .22s ease;
+  box-shadow:var(--shadow);max-width:88vw;text-align:center}
 @media(min-width:861px){#toast{bottom:26px}}
-#toast.on{transform:translate(-50%,0)}
+#toast.on{transform:translate(-50%,0);opacity:1}
 #toast.err{color:var(--red)}
 .skel{height:14px;border-radius:7px;background:var(--fill);margin:11px 0;animation:pl 1.4s ease-in-out infinite}
 @keyframes pl{50%{opacity:.45}}
