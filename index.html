@@ -194,6 +194,35 @@ td.n,th.n{text-align:right;white-space:nowrap}
   table.resp td.full{display:block;text-align:left;padding:5px 0 7px}
   table.resp td.full::before{display:block;margin-bottom:3px}
   table.resp tfoot{display:none}
+
+  /* Today is the screen you actually type on, so it gets a tighter card than the
+     generic restack: name and status share a line, the task runs full width, and
+     project sits next to the row actions. One field per labelled line made every
+     developer 241px tall — nearly six screens for eighteen of them. */
+  table.resp.gt tbody tr{display:flex;flex-wrap:wrap;align-items:center;
+    gap:7px 10px;padding:10px 13px}
+  table.resp.gt td{display:block;padding:0;border:0;text-align:left}
+  table.resp.gt td::before{display:none}
+  table.resp.gt td.pcell{order:1;flex:1 1 auto;min-width:0}
+  table.resp.gt td[data-l="Status"]{order:2;flex:0 0 auto}
+  table.resp.gt td.tcell{order:3;flex:1 0 100%;padding:0}
+  table.resp.gt td[data-l="Project"]{order:4;flex:1 1 auto;min-width:0}
+  table.resp.gt td[data-l="Hours"]{order:5;flex:0 0 auto}
+  table.resp.gt td.acts{order:6;flex:0 0 auto;display:flex;
+    justify-content:flex-end;gap:2px;margin-left:auto}
+  table.resp.gt .nm{gap:8px}
+  table.resp.gt select.c-pr{width:100%;min-width:0}
+  /* it reveals on hover, which never happens on touch — so it was an invisible
+     but still tappable "remove developer" sitting beside every name. Removing
+     people belongs on Team & Projects; keep it off the typing screen. */
+  table.resp.gt .pcell .rmdev{display:none}
+}
+
+/* thumb-sized controls on touch layouts; the desktop keeps its compact sizing */
+@media(max-width:720px){
+  .seg button{min-height:44px}
+  #app table.resp td button.i,#app button.i.delp{width:34px;height:34px}
+  #app table.resp.gt td.acts button.i{width:40px;height:40px;font-size:14px}
 }
 .empty{text-align:center;padding:44px 22px;color:var(--txt2)}
 .empty h3{margin:0 0 6px;font-size:17px;font-weight:600;color:var(--txt)}
