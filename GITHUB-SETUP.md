@@ -81,11 +81,45 @@ password you just made. Same board everywhere.
 **On your phone:** open the URL in Safari or Chrome → **Share → Add to Home Screen**. It opens
 full-screen with the samosa icon.
 
-### Giving someone else access
+---
 
-Invite them to `devsamosa-data` (Settings → Collaborators), and have them make their **own** token
-by repeating step 3. Their edits then show up under their own name in the repo's history, and you
-can remove just them later without disturbing anyone else.
+## 5. One shared password, so nobody else has to do any of this (5 min)
+
+Steps 3 and 4 are per-device, which gets old fast if you're handing the link around. Run this once
+and everyone else just needs the link and a password:
+
+```
+node setup-shared-login.js
+```
+
+It asks for the repository and your token, checks the token works, and encrypts both into
+`index.html`. Then commit and push that file. From then on:
+
+**Open the link → type the team password → you're in.** No repository, no token, on any device.
+
+The script suggests a five-word password like `cedar-lantern-quartz-meadow-ripple`. Use it. It's
+strong enough for the encrypted blob to be published, and short enough to read out on a call.
+
+### What you're trading
+
+The encrypted blob sits in `index.html`, which is public. Nobody can get anything out of it without
+the password — it's AES-256 with 600,000 rounds of key stretching — but **the password becomes the
+only thing protecting the board.** That means:
+
+- Use the generated password, not `devsamosa2026`. A guessable one is the whole attack.
+- Share it the way you'd share a door code, and don't post it anywhere public.
+- Anyone who has it can read and edit everything. There's no per-person access, which is what you
+  wanted — just be deliberate about who gets it.
+
+To change the password or rotate the token, run the script again and push. Everyone signs in with
+the new password next time; nothing is lost.
+
+### Or: separate access per person
+
+If you'd rather each person be individually revocable, skip the shared password. Invite them to
+`devsamosa-data` (Settings → Collaborators) and have them make their **own** token by repeating
+step 3. Their edits then show up under their own name in the repo's history, and you can remove
+just them later without disturbing anyone else.
 
 ---
 

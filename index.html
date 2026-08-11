@@ -1031,6 +1031,32 @@ async function cloudStart(fresh){
 const GH={owner:'',repo:'',branch:'main',token:'',
   head:'',tree:'',shas:{},last:{},busy:false,again:false,poll:null};
 const GHKEY='devsamosa:gh', SHFILE='shared.json';
+
+/* ---- one shared password for the whole team ----------------------------
+   The repo and token are encrypted into the line below with AES-GCM, using a
+   key stretched from the team password with PBKDF2. index.html is public, so
+   this blob is public too — it is worthless without the password, and the
+   password is never stored anywhere. Regenerate with setup-shared-login.js.
+   Left null until that has been run; the app then asks for repo + token
+   per device, as before.                                                   */
+const GHENC=null;
+
+async function ghKey(pass,salt,it){
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),
+    'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:it,hash:'SHA-256'},
+    base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+/* AES-GCM is authenticated, so a wrong password throws rather than returning
+   plausible rubbish — that is what makes this the login check as well */
+async function ghUnlock(pass){
+  const raw=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+  const k=await ghKey(pass,raw(GHENC.salt),GHENC.it||600000);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:raw(GHENC.iv)},k,raw(GHENC.ct));
+  const cfg=JSON.parse(new TextDecoder().decode(pt));
+  if(!cfg.owner||!cfg.repo||!cfg.token)throw new Error('bad payload');
+  return cfg;
+}
 const pfile=id=>'people/'+id+'.json';
 const isShard=p=>p===SHFILE||/^people\/[^/]+\.json$/.test(p);
 
@@ -1232,6 +1258,45 @@ function ghWatch(){
 }
 
 /* ---- screens ---- */
+/* the whole sign-in when a shared password has been baked in: one field, and
+   getting it right is what produces the token in the first place */
+function ghTeamLock(){
+  $('#app').classList.add('hidden');$('#tabs').classList.add('hidden');
+  $('#lock').classList.remove('hidden');
+  $('#lock').innerHTML=`<div class="lockcard" id="lc">${markSVG('mark')}
+    <h1>DevSamosa</h1><p class="tag">Sign in to the team board</p>
+    <label class="f"><span class="lbl">Team password</span><span class="pwwrap">
+      <input type="password" id="tp" autocomplete="current-password"
+        placeholder="The password your team shares">
+      <button type="button" class="pweye" data-f="tp">Show</button></span></label>
+    <p class="lockerr" id="err"></p>
+    <button class="b p wide" id="go">Sign in</button>
+    <p class="hint" style="margin-top:14px">Everyone uses the same password, and everyone
+      sees the same board. <a href="#" id="own">Use this device only</a></p>
+  </div>`;
+  const fail=m=>{$('#err').textContent=m;$('#lc').classList.remove('shake');
+    void $('#lc').offsetWidth;$('#lc').classList.add('shake')};
+  $$('#lock .pweye').forEach(b=>b.onclick=()=>{const f=$('#'+b.dataset.f);
+    const s=f.type==='password';f.type=s?'text':'password';b.textContent=s?'Hide':'Show';f.focus()});
+  $('#tp').onkeydown=e=>{if(e.key==='Enter')$('#go').click()};
+  $('#own').onclick=async e=>{
+    e.preventDefault();ghForget();
+    await initStore();await load();lockScreen();
+  };
+  $('#go').onclick=async()=>{
+    const pw=$('#tp').value;
+    if(!pw)return fail('Enter the team password');
+    $('#go').disabled=true;$('#err').textContent='Checking…';
+    let cfg;
+    try{cfg=await ghUnlock(pw)}
+    catch(e){$('#go').disabled=false;return fail('That password is not right')}
+    Object.assign(GH,{owner:cfg.owner,repo:cfg.repo,branch:cfg.branch||'main',token:cfg.token});
+    ghCfgSave();
+    await setSession('team','admin');ADMIN=true;
+    await ghStart();
+  };
+  setTimeout(()=>{const f=$('#tp');f&&f.focus()},240);
+}
 function ghConnect(){
   $('#app').classList.add('hidden');$('#tabs').classList.add('hidden');
   $('#lock').classList.remove('hidden');
@@ -1287,12 +1352,20 @@ async function ghStart(){
     const raw=await ghLoad();
     if(raw){try{DB={...DB,...JSON.parse(raw)}}catch(e){}}
     if(!DB.people.length&&typeof SEED!=='undefined')mergeSeed();
-    if((DB.authV||0)<3){DB.authV=3;DB.user='';DB.pass='';DB.recovery='';await clearSession()}
+    if((DB.authV||0)<3){DB.authV=3;DB.user='';DB.pass='';DB.recovery='';
+      /* that migration forces a re-login, but on a shared password there is no
+         local login to migrate — clearing here would drop the session the team
+         password just created and bounce straight back to the lock screen */
+      if(!GHENC)await clearSession()}
     if((DB.dataV||0)<2){DB.dataV=2;DB.updates=[];DB.allocs=[]}
     ghWatch();
     const s=await getSession();
-    if(s&&DB.pass&&s.role==='admin'){ADMIN=true;enter()}else lockScreen();
+    /* with a shared password the team password IS the login — don't ask twice */
+    if(s&&s.role==='admin'&&(GHENC||DB.pass)){ADMIN=true;enter()}
+    else if(GHENC)ghTeamLock();
+    else lockScreen();
   }catch(e){
+    if(GHENC&&(e.status===401||e.status===403)){ghForget();return ghTeamLock()}
     ghConnect();
     setTimeout(()=>{const el=$('#err');if(el)el.textContent=
       e.status===401?'That token was rejected. It may have expired — paste a new one.'
@@ -2524,6 +2597,10 @@ function buildMenu(){
     else if(a==='out'){
       if(STORE.mode==='cloud'){clearInterval(CLOUD.poll);CLOUD.token='';CLOUD.refresh='';
         CLOUD.exp=0;cloudCfgSave();return cloudLock('in')}
+      /* on a shared password, signing out has to drop the token too — otherwise
+         the next person on this device is straight back in without typing it */
+      if(STORE.mode==='github'&&GHENC){
+        clearInterval(GH.poll);await clearSession();ghForget();ADMIN=false;return ghTeamLock()}
       await clearSession();ADMIN=false;lockScreen('in')}
   });
 }
@@ -3283,6 +3360,12 @@ function seed(){
     if(ghCfgLoad()){
       STORE.mode='github';STORE.label='Team repo';
       await ghStart();
+      return;
+    }
+    /* a shared password is baked in: ask for that and nothing else */
+    if(GHENC){
+      STORE.mode='github';STORE.label='Team repo';
+      ghTeamLock();
       return;
     }
     if(cloudCfgLoad()){
