@@ -1039,7 +1039,7 @@ const GHKEY='devsamosa:gh', SHFILE='shared.json';
    password is never stored anywhere. Regenerate with setup-shared-login.js.
    Left null until that has been run; the app then asks for repo + token
    per device, as before.                                                   */
-const GHENC=null;
+const GHENC={"salt":"t6XrtJnpisyDmIM5NV86wQ==","iv":"5VFv6j4I7AocjAiL","ct":"4Rn/wbG9MligtxXsa2X8XTq63kaTNVm95jw1HlwJ/O+FNqbjDDW8yP0ijaVj1P/2EG6MU2VL6ymiiW1yUVS5Z1FDOTYddIHDVhQYmhi7iGBlBXPLhEfhdzqFQ0bojl+tmF6rpn778rgLPouifHF0OrFO5K6kfnf/L4ug7bbbv6n2VK0pJOmxwnu6ftP/eUasShBfsVJ7SNiZkCDh/INxVesG9QkWYH1DqACx8zvQWQnNszUB1iI5qpvGZA==","it":600000};
 
 async function ghKey(pass,salt,it){
   const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),
