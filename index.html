@@ -2686,7 +2686,11 @@ function buildMenu(){
     +item('back','Download backup')+item('restore','Restore from a file')
     +item('snaps','Backups &amp; undo')+sep;
   html+=item('pw','Change password')+item('sec','Secret number')+sep;
-  html+=(STORE.mode==='github'?item('ghout','Disconnect team repo',GH.owner+'/'+GH.repo)
+  /* on a shared password the repo is never shown, so name the action by what it
+     costs you: the team password, rather than a repo you have never seen */
+  html+=(STORE.mode==='github'
+        ?(GHENC?item('ghout','Forget this device')
+               :item('ghout','Disconnect team repo',GH.owner+'/'+GH.repo))
       :STORE.mode==='cloud'?item('cloudout','Sign out of team board',CLOUD.email)
       :item('ghin','Use a shared team board'))+sep;
   html+=item('theme','Appearance',THEME==='dark'?'Dark':'Light')
@@ -2719,10 +2723,14 @@ function buildMenu(){
     else if(a==='out'){
       if(STORE.mode==='cloud'){clearInterval(CLOUD.poll);CLOUD.token='';CLOUD.refresh='';
         CLOUD.exp=0;cloudCfgSave();return cloudLock('in')}
-      /* on a shared password, signing out has to drop the token too — otherwise
-         the next person on this device is straight back in without typing it */
+      /* Sign out means lock, not forget: the PIN gets you back in, same as a
+         banking app. "Forget this device" is the one that drops the PIN copy
+         and makes the team password necessary again. */
       if(STORE.mode==='github'&&GHENC){
-        clearInterval(GH.poll);await clearSession();ghForget();ghPinForget();ADMIN=false;return ghTeamLock()}
+        clearInterval(GH.poll);await clearSession();ADMIN=false;
+        Object.assign(GH,{token:'',head:'',tree:'',shas:{},last:{}});
+        return ghPinBox()?ghPinLock():ghTeamLock();
+      }
       await clearSession();ADMIN=false;lockScreen('in')}
   });
 }

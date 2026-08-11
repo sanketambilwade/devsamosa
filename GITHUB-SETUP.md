@@ -120,6 +120,13 @@ problems. That's the same split your banking app uses.
 
 If you forget the PIN, tap **Forgot your PIN?** and sign in with the team password again.
 
+### Signing out vs forgetting a device
+
+- **••• → Sign out** locks the app. Your PIN gets you straight back in. Use it when you put the
+  phone down.
+- **••• → Forget this device** wipes the stored copy entirely, so the team password is needed
+  again. Use it when handing a device on, or if one is lost.
+
 ### What you're trading
 
 The encrypted blob sits in `index.html`, which is public. Nobody can get anything out of it without
