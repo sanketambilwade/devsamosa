@@ -1047,15 +1047,62 @@ async function ghKey(pass,salt,it){
   return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:it,hash:'SHA-256'},
     base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
 }
+const b64u=u=>{let s='';for(let i=0;i<u.length;i+=0x8000)
+  s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+
+async function ghSeal(pass,obj,it){
+  const salt=crypto.getRandomValues(new Uint8Array(16));
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const k=await ghKey(pass,salt,it);
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,
+    new TextEncoder().encode(JSON.stringify(obj))));
+  return {salt:b64u(salt),iv:b64u(iv),ct:b64u(ct),it};
+}
 /* AES-GCM is authenticated, so a wrong password throws rather than returning
    plausible rubbish — that is what makes this the login check as well */
+async function ghOpen(pass,box){
+  const k=await ghKey(pass,unb64(box.salt),box.it||600000);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(box.iv)},k,unb64(box.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
 async function ghUnlock(pass){
-  const raw=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-  const k=await ghKey(pass,raw(GHENC.salt),GHENC.it||600000);
-  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:raw(GHENC.iv)},k,raw(GHENC.ct));
-  const cfg=JSON.parse(new TextDecoder().decode(pt));
+  const cfg=await ghOpen(pass,GHENC);
   if(!cfg.owner||!cfg.repo||!cfg.token)throw new Error('bad payload');
   return cfg;
+}
+
+/* ---- the device PIN -----------------------------------------------------
+   The team passphrase is typed once per device. After that the token is kept
+   re-encrypted under a 4-digit PIN in this browser's storage only — never
+   published — so a short PIN is fine here: guessing it means already holding
+   the unlocked device. Wrong guesses are counted and the copy is destroyed
+   after PINTRIES, which is the limit a server would normally enforce.       */
+const PINKEY='devsamosa:pin', PINIT=300000, PINTRIES=5;
+
+function ghPinBox(){
+  try{const r=JSON.parse(localStorage.getItem(PINKEY)||'null');
+    return r&&r.ct?r:null}catch(e){return null}
+}
+async function ghPinSet(pin,cfg){
+  const box=await ghSeal(pin,cfg,PINIT);
+  box.tries=0;
+  try{localStorage.setItem(PINKEY,JSON.stringify(box))}catch(e){}
+}
+function ghPinForget(){try{localStorage.removeItem(PINKEY)}catch(e){}}
+async function ghPinOpen(pin){
+  const box=ghPinBox();
+  if(!box)throw new Error('no pin set');
+  try{
+    const cfg=await ghOpen(pin,box);
+    box.tries=0;try{localStorage.setItem(PINKEY,JSON.stringify(box))}catch(e){}
+    return cfg;
+  }catch(e){
+    box.tries=(box.tries||0)+1;
+    if(box.tries>=PINTRIES){ghPinForget();const x=new Error('locked out');x.locked=true;throw x}
+    try{localStorage.setItem(PINKEY,JSON.stringify(box))}catch(e2){}
+    const x=new Error('wrong pin');x.left=PINTRIES-box.tries;throw x;
+  }
 }
 const pfile=id=>'people/'+id+'.json';
 const isShard=p=>p===SHFILE||/^people\/[^/]+\.json$/.test(p);
@@ -1280,7 +1327,7 @@ function ghTeamLock(){
     const s=f.type==='password';f.type=s?'text':'password';b.textContent=s?'Hide':'Show';f.focus()});
   $('#tp').onkeydown=e=>{if(e.key==='Enter')$('#go').click()};
   $('#own').onclick=async e=>{
-    e.preventDefault();ghForget();
+    e.preventDefault();ghForget();ghPinForget();
     await initStore();await load();lockScreen();
   };
   $('#go').onclick=async()=>{
@@ -1290,12 +1337,87 @@ function ghTeamLock(){
     let cfg;
     try{cfg=await ghUnlock(pw)}
     catch(e){$('#go').disabled=false;return fail('That password is not right')}
+    ghPinNew(cfg);
+  };
+  setTimeout(()=>{const f=$('#tp');f&&f.focus()},240);
+}
+
+/* a keypad-friendly field: type=password keeps it hidden, inputmode drives the
+   numeric keyboard on both iOS and Android */
+const pinField=(id,ph)=>`<input type="password" id="${id}" inputmode="numeric"
+  pattern="[0-9]*" autocomplete="off" maxlength="4" placeholder="${ph}"
+  class="pin" style="letter-spacing:.5em;text-align:center;font-size:22px">`;
+
+/* straight after the passphrase, once per device */
+function ghPinNew(cfg){
+  $('#app').classList.add('hidden');$('#tabs').classList.add('hidden');
+  $('#lock').classList.remove('hidden');
+  $('#lock').innerHTML=`<div class="lockcard" id="lc">${markSVG('mark')}
+    <h1>DevSamosa</h1><p class="tag">Pick a 4-digit PIN for this device</p>
+    <label class="f"><span class="lbl">PIN</span>${pinField('p1','••••')}</label>
+    <label class="f"><span class="lbl">Again</span>${pinField('p2','••••')}</label>
+    <p class="lockerr" id="err"></p>
+    <button class="b p wide" id="go">Save PIN</button>
+    <p class="hint" style="margin-top:14px">From now on this device only asks for the PIN.
+      The team password is needed again only if you sign out or clear your browser.</p>
+  </div>`;
+  const fail=m=>{$('#err').textContent=m;$('#lc').classList.remove('shake');
+    void $('#lc').offsetWidth;$('#lc').classList.add('shake')};
+  $$('#lock .pin').forEach(i=>{
+    i.oninput=()=>{i.value=i.value.replace(/\D/g,'').slice(0,4);
+      if(i.id==='p1'&&i.value.length===4)$('#p2').focus()};
+    i.onkeydown=e=>{if(e.key==='Enter')$('#go').click()};
+  });
+  $('#go').onclick=async()=>{
+    const a=$('#p1').value,b=$('#p2').value;
+    if(!/^\d{4}$/.test(a))return fail('Four digits, please');
+    if(a!==b)return fail('Those two do not match');
+    $('#go').disabled=true;
+    await ghPinSet(a,cfg);
     Object.assign(GH,{owner:cfg.owner,repo:cfg.repo,branch:cfg.branch||'main',token:cfg.token});
-    ghCfgSave();
     await setSession('team','admin');ADMIN=true;
     await ghStart();
   };
-  setTimeout(()=>{const f=$('#tp');f&&f.focus()},240);
+  setTimeout(()=>{const f=$('#p1');f&&f.focus()},240);
+}
+
+/* every unlock after that */
+function ghPinLock(){
+  $('#app').classList.add('hidden');$('#tabs').classList.add('hidden');
+  $('#lock').classList.remove('hidden');
+  $('#lock').innerHTML=`<div class="lockcard" id="lc">${markSVG('mark')}
+    <h1>DevSamosa</h1><p class="tag">Enter your PIN</p>
+    <label class="f">${pinField('pn','••••')}</label>
+    <p class="lockerr" id="err"></p>
+    <button class="b p wide" id="go">Unlock</button>
+    <p class="hint" style="margin-top:14px"><a href="#" id="fp">Forgot your PIN?</a></p>
+  </div>`;
+  const fail=m=>{$('#err').textContent=m;$('#lc').classList.remove('shake');
+    void $('#lc').offsetWidth;$('#lc').classList.add('shake');
+    const f=$('#pn');if(f){f.value='';f.focus()}};
+  $('#fp').onclick=e=>{e.preventDefault();ghPinForget();ghTeamLock()};
+  const submit=async()=>{
+    const pin=$('#pn').value;
+    if(!/^\d{4}$/.test(pin))return fail('Four digits, please');
+    $('#go').disabled=true;$('#err').textContent='…';
+    let cfg;
+    try{cfg=await ghPinOpen(pin)}
+    catch(e){
+      $('#go').disabled=false;
+      if(e.locked){toast('Too many wrong PINs — sign in with the team password',1);
+        return ghTeamLock()}
+      return fail('Wrong PIN'+(e.left?` — ${e.left} ${e.left===1?'try':'tries'} left`:''));
+    }
+    Object.assign(GH,{owner:cfg.owner,repo:cfg.repo,branch:cfg.branch||'main',token:cfg.token});
+    await setSession('team','admin');ADMIN=true;
+    await ghStart();
+  };
+  $('#go').onclick=submit;
+  const f=$('#pn');
+  f.oninput=()=>{f.value=f.value.replace(/\D/g,'').slice(0,4);
+    if(f.value.length===4)submit()};          /* no Enter needed on a keypad */
+  f.onkeydown=e=>{if(e.key==='Enter')submit()};
+  setTimeout(()=>f.focus(),240);
 }
 function ghConnect(){
   $('#app').classList.add('hidden');$('#tabs').classList.add('hidden');
@@ -1365,7 +1487,7 @@ async function ghStart(){
     else if(GHENC)ghTeamLock();
     else lockScreen();
   }catch(e){
-    if(GHENC&&(e.status===401||e.status===403)){ghForget();return ghTeamLock()}
+    if(GHENC&&(e.status===401||e.status===403)){ghForget();ghPinForget();return ghTeamLock()}
     ghConnect();
     setTimeout(()=>{const el=$('#err');if(el)el.textContent=
       e.status===401?'That token was rejected. It may have expired — paste a new one.'
@@ -2589,7 +2711,7 @@ function buildMenu(){
     else if(a==='crit'){CRITTERS=!CRITTERS;toast('Critters '+(CRITTERS?'on':'off'));if(!CRITTERS)$$('.critter').forEach(c=>c.remove())}
     else if(a==='sync'){await load();render();toast('Up to date')}
     else if(a==='ghin')ghConnect();
-    else if(a==='ghout'){clearInterval(GH.poll);ghForget();location.reload()}
+    else if(a==='ghout'){clearInterval(GH.poll);ghForget();ghPinForget();location.reload()}
     else if(a==='cloudin')cloudConnect();
     else if(a==='cloudout'){clearInterval(CLOUD.poll);
       CLOUD.token='';CLOUD.refresh='';CLOUD.exp=0;cloudCfgSave();cloudLock('in')}
@@ -2600,7 +2722,7 @@ function buildMenu(){
       /* on a shared password, signing out has to drop the token too — otherwise
          the next person on this device is straight back in without typing it */
       if(STORE.mode==='github'&&GHENC){
-        clearInterval(GH.poll);await clearSession();ghForget();ADMIN=false;return ghTeamLock()}
+        clearInterval(GH.poll);await clearSession();ghForget();ghPinForget();ADMIN=false;return ghTeamLock()}
       await clearSession();ADMIN=false;lockScreen('in')}
   });
 }
@@ -3357,6 +3479,12 @@ function seed(){
   document.documentElement.dataset.t=THEME;
   try{bgInit()}catch(e){console.error('background',e)}
   try{
+    /* this device has already been set up: PIN only, no passphrase */
+    if(GHENC&&ghPinBox()){
+      STORE.mode='github';STORE.label='Team repo';
+      ghPinLock();
+      return;
+    }
     if(ghCfgLoad()){
       STORE.mode='github';STORE.label='Team repo';
       await ghStart();

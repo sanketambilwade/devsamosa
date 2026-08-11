@@ -93,12 +93,32 @@ node setup-shared-login.js
 ```
 
 It asks for the repository and your token, checks the token works, and encrypts both into
-`index.html`. Then commit and push that file. From then on:
+`index.html`. Then commit and push that file.
 
-**Open the link → type the team password → you're in.** No repository, no token, on any device.
+From then on, on any device:
+
+1. **First time only** — type the team password, then pick a **4-digit PIN** for that device.
+2. **Every time after** — just the PIN, on a numeric keypad.
+
+There is no username. One password, one board, everyone sees the same thing.
 
 The script suggests a five-word password like `cedar-lantern-quartz-meadow-ripple`. Use it. It's
 strong enough for the encrypted blob to be published, and short enough to read out on a call.
+
+### Why the PIN isn't the password
+
+They protect different things, which is why the short one is safe and the long one is needed.
+
+The team password guards a file that is **published on the internet**. Anyone can download it and
+guess at it offline, as fast as their hardware allows — nothing can rate-limit them, because there
+is no server. Four digits would fall in about a second; five random words would take longer than
+the universe has existed.
+
+Your PIN guards a copy that lives **only in that browser**, and is wiped after five wrong tries.
+To attack it someone needs your unlocked phone first, at which point the PIN is the least of your
+problems. That's the same split your banking app uses.
+
+If you forget the PIN, tap **Forgot your PIN?** and sign in with the team password again.
 
 ### What you're trading
 
