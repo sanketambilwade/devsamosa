@@ -1216,31 +1216,34 @@ function ghMsg(path){
   }
   return 'Update board · '+D.today();
 }
-async function ghConflict(){
-  const fresh=await ghLoad();
-  if(fresh){try{DB={...DB,...JSON.parse(fresh)}}catch(e){}}
-  render();
-  toast('Someone else updated the board — reloaded their version',1);
-  return false;
-}
 const ghStale=e=>e.status===409||e.status===422;
+
+/* Someone else committed between our read and our write. Take their version of
+   every shard EXCEPT the ones we are part-way through writing — those hold what
+   the user is typing right now. Reloading over the top of them is what silently
+   threw an update away. */
+async function ghRebase(mine){
+  await ghLoad();                        /* refreshes head, tree, shas and last */
+  const merged={...GH.last,...mine};
+  try{DB={...DB,...ghMerge(merged)}}catch(e){}
+  /* never re-render under someone's fingers; the next natural render catches up */
+  if(!(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)))render();
+}
 
 async function ghPutOne(path,text){
   const body={message:ghMsg(path),content:b64enc(text),branch:GH.branch};
   if(GH.shas[path])body.sha=GH.shas[path];
-  try{
-    const r=await ghApi(ghRepo()+'/contents/'+path,{method:'PUT',body:JSON.stringify(body)});
-    GH.shas[path]=r.content.sha;GH.last[path]=text;
-    GH.head=r.commit.sha;GH.tree='';       /* root tree moved; refetched when needed */
-    return true;
-  }catch(e){if(ghStale(e))return await ghConflict();throw e}
+  const r=await ghApi(ghRepo()+'/contents/'+path,{method:'PUT',body:JSON.stringify(body)});
+  GH.shas[path]=r.content.sha;GH.last[path]=text;
+  GH.head=r.commit.sha;GH.tree='';         /* root tree moved; refetched when needed */
+  return true;
 }
 /* several files at once (say, removing a person, or the very first save) go in
    ONE commit, so the board can never be caught half-written. Passing the text
    inline as `content` lets the tree call create the blobs, so this is a fixed
    four requests no matter how many files moved. */
 async function ghCommitAll(files,changed,gone){
-  try{
+  {
     const nodes=changed.map(p=>({path:p,mode:'100644',type:'blob',content:files[p]}));
     const body={tree:nodes};
     if(GH.head){
@@ -1264,15 +1267,24 @@ async function ghCommitAll(files,changed,gone){
     (t.tree||[]).forEach(n=>{if(n.type==='blob'&&isShard(n.path))shas[n.path]=n.sha});
     GH.shas=shas;
     return true;
-  }catch(e){if(ghStale(e))return await ghConflict();throw e}
+  }
 }
-async function ghFlush(){
+async function ghFlush(attempt){
   const files=ghSplit(DB);
   const changed=Object.keys(files).filter(p=>files[p]!==GH.last[p]);
   const gone=Object.keys(GH.last).filter(p=>!(p in files));
   if(!changed.length&&!gone.length)return true;
-  if(changed.length===1&&!gone.length)return await ghPutOne(changed[0],files[changed[0]]);
-  return await ghCommitAll(files,changed,gone);
+  const n=attempt||0;
+  try{
+    if(changed.length===1&&!gone.length)return await ghPutOne(changed[0],files[changed[0]]);
+    return await ghCommitAll(files,changed,gone);
+  }catch(e){
+    if(!ghStale(e)||n>=3)throw e;
+    const mine={};changed.forEach(p=>mine[p]=files[p]);
+    await ghRebase(mine);
+    if(!n)toast('Merged an update from another device');
+    return await ghFlush(n+1);            /* write again against the fresh shas */
+  }
 }
 /* a commit takes about a second, so a save can land while one is still in
    flight — keep one request out at a time and repeat if the board moved on */
