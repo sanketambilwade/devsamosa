@@ -1329,6 +1329,14 @@ function ghWatch(){
 }
 
 /* ---- screens ---- */
+/* Chat apps open links in their own webview, which usually discards storage when
+   it closes — so the PIN never survives and setup repeats on every open. Worth
+   saying up front, because the link gets passed around in exactly those apps. */
+function inAppBrowser(){
+  const u=navigator.userAgent||'';
+  return /FBAN|FBAV|Instagram|Line\/|WhatsApp|Snapchat|MicroMessenger|Teams|Slack|GSA\//i.test(u)
+    ||/;\s*wv\)/i.test(u);                     /* generic Android WebView */
+}
 /* the whole sign-in when a shared password has been baked in: one field, and
    getting it right is what produces the token in the first place */
 function ghTeamLock(){
@@ -1342,6 +1350,9 @@ function ghTeamLock(){
       <button type="button" class="pweye" data-f="tp">Show</button></span></label>
     <p class="lockerr" id="err"></p>
     <button class="b p wide" id="go">Sign in</button>
+    ${inAppBrowser()?`<p class="hint" style="margin-top:14px;color:var(--saffron)">
+      You have opened this inside a chat app. It will forget your PIN every time you
+      close it — tap the <b>•••</b> menu and choose <b>Open in browser</b> first.</p>`:''}
     <p class="hint" style="margin-top:14px">Everyone uses the same password, and everyone
       sees the same board. <a href="#" id="own">Use this device only</a></p>
   </div>`;

@@ -120,6 +120,23 @@ problems. That's the same split your banking app uses.
 
 If you forget the PIN, tap **Forgot your PIN?** and sign in with the team password again.
 
+### Don't open the link from inside a chat app
+
+WhatsApp, Teams and Slack open links in their own built-in browser, and those usually **throw away
+saved data when you close them**. The PIN never survives, so it asks for the team password every
+single time — it genuinely looks like a new device on each open.
+
+When you send someone the link, tell them to open it properly:
+
+- **Android** — tap the **•••** in the chat app's browser → **Open in Chrome**
+- **iPhone** — tap the **compass / Safari icon** at the bottom right → opens in Safari
+
+Then, once signed in, **Add to Home Screen** so it opens like an app afterwards. The app warns you
+if it spots this, but it can't fix it from the inside.
+
+One iPhone quirk: Safari and the Home Screen icon keep **separate** storage. Setting up in Safari
+doesn't carry over to the Home Screen app, so each needs the team password once.
+
 ### Signing out vs forgetting a device
 
 - **••• → Sign out** locks the app. Your PIN gets you straight back in. Use it when you put the
