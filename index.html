@@ -1084,11 +1084,23 @@ function ghPinBox(){
   try{const r=JSON.parse(localStorage.getItem(PINKEY)||'null');
     return r&&r.ct?r:null}catch(e){return null}
 }
+/* returns false if the browser refused to keep it — silently swallowing that
+   made setup repeat on every launch with nothing to explain why */
 async function ghPinSet(pin,cfg){
   const box=await ghSeal(pin,cfg,PINIT);
   box.tries=0;
-  try{localStorage.setItem(PINKEY,JSON.stringify(box))}catch(e){}
+  try{
+    localStorage.setItem(PINKEY,JSON.stringify(box));
+    return !!localStorage.getItem(PINKEY);
+  }catch(e){return false}
 }
+
+/* the decrypted token for as long as this app stays open, so a refresh does not
+   re-ask; sessionStorage dies with the tab, unlike the PIN copy */
+const TOKKEY='devsamosa:tok';
+function ghMemSave(cfg){try{sessionStorage.setItem(TOKKEY,JSON.stringify(cfg))}catch(e){}}
+function ghMemLoad(){try{return JSON.parse(sessionStorage.getItem(TOKKEY)||'null')}catch(e){return null}}
+function ghMemForget(){try{sessionStorage.removeItem(TOKKEY)}catch(e){}}
 function ghPinForget(){try{localStorage.removeItem(PINKEY)}catch(e){}}
 async function ghPinOpen(pin){
   const box=ghPinBox();
@@ -1339,7 +1351,7 @@ function ghTeamLock(){
     const s=f.type==='password';f.type=s?'text':'password';b.textContent=s?'Hide':'Show';f.focus()});
   $('#tp').onkeydown=e=>{if(e.key==='Enter')$('#go').click()};
   $('#own').onclick=async e=>{
-    e.preventDefault();ghForget();ghPinForget();
+    e.preventDefault();ghForget();ghPinForget();ghMemForget();
     await initStore();await load();lockScreen();
   };
   $('#go').onclick=async()=>{
@@ -1385,8 +1397,13 @@ function ghPinNew(cfg){
     if(!/^\d{4}$/.test(a))return fail('Four digits, please');
     if(a!==b)return fail('Those two do not match');
     $('#go').disabled=true;
-    await ghPinSet(a,cfg);
+    if(!await ghPinSet(a,cfg)){
+      $('#go').disabled=false;
+      return fail('This browser will not keep the PIN. Private browsing blocks it — '
+        +'open the app in a normal window and try again.');
+    }
     Object.assign(GH,{owner:cfg.owner,repo:cfg.repo,branch:cfg.branch||'main',token:cfg.token});
+    ghMemSave(cfg);
     await setSession('team','admin');ADMIN=true;
     await ghStart();
   };
@@ -1416,11 +1433,12 @@ function ghPinLock(){
     try{cfg=await ghPinOpen(pin)}
     catch(e){
       $('#go').disabled=false;
-      if(e.locked){toast('Too many wrong PINs — sign in with the team password',1);
+      if(e.locked){ghMemForget();toast('Too many wrong PINs — sign in with the team password',1);
         return ghTeamLock()}
       return fail('Wrong PIN'+(e.left?` — ${e.left} ${e.left===1?'try':'tries'} left`:''));
     }
     Object.assign(GH,{owner:cfg.owner,repo:cfg.repo,branch:cfg.branch||'main',token:cfg.token});
+    ghMemSave(cfg);
     await setSession('team','admin');ADMIN=true;
     await ghStart();
   };
@@ -1496,10 +1514,11 @@ async function ghStart(){
     const s=await getSession();
     /* with a shared password the team password IS the login — don't ask twice */
     if(s&&s.role==='admin'&&(GHENC||DB.pass)){ADMIN=true;enter()}
-    else if(GHENC)ghTeamLock();
+    /* a set-up device asks for its PIN, never the passphrase again */
+    else if(GHENC)ghPinBox()?ghPinLock():ghTeamLock();
     else lockScreen();
   }catch(e){
-    if(GHENC&&(e.status===401||e.status===403)){ghForget();ghPinForget();return ghTeamLock()}
+    if(GHENC&&(e.status===401||e.status===403)){ghForget();ghPinForget();ghMemForget();return ghTeamLock()}
     ghConnect();
     setTimeout(()=>{const el=$('#err');if(el)el.textContent=
       e.status===401?'That token was rejected. It may have expired — paste a new one.'
@@ -2727,7 +2746,7 @@ function buildMenu(){
     else if(a==='crit'){CRITTERS=!CRITTERS;toast('Critters '+(CRITTERS?'on':'off'));if(!CRITTERS)$$('.critter').forEach(c=>c.remove())}
     else if(a==='sync'){await load();render();toast('Up to date')}
     else if(a==='ghin')ghConnect();
-    else if(a==='ghout'){clearInterval(GH.poll);ghForget();ghPinForget();location.reload()}
+    else if(a==='ghout'){clearInterval(GH.poll);ghForget();ghPinForget();ghMemForget();location.reload()}
     else if(a==='cloudin')cloudConnect();
     else if(a==='cloudout'){clearInterval(CLOUD.poll);
       CLOUD.token='';CLOUD.refresh='';CLOUD.exp=0;cloudCfgSave();cloudLock('in')}
@@ -2739,7 +2758,7 @@ function buildMenu(){
          banking app. "Forget this device" is the one that drops the PIN copy
          and makes the team password necessary again. */
       if(STORE.mode==='github'&&GHENC){
-        clearInterval(GH.poll);await clearSession();ADMIN=false;
+        clearInterval(GH.poll);await clearSession();ghMemForget();ADMIN=false;
         Object.assign(GH,{token:'',head:'',tree:'',shas:{},last:{}});
         return ghPinBox()?ghPinLock():ghTeamLock();
       }
@@ -3499,21 +3518,24 @@ function seed(){
   document.documentElement.dataset.t=THEME;
   try{bgInit()}catch(e){console.error('background',e)}
   try{
-    /* this device has already been set up: PIN only, no passphrase */
-    if(GHENC&&ghPinBox()){
+    if(GHENC){
       STORE.mode='github';STORE.label='Team repo';
-      ghPinLock();
+      const live=ghMemLoad();
+      if(live&&live.token){
+        /* still the same app session — a refresh should not ask for anything */
+        Object.assign(GH,{owner:live.owner,repo:live.repo,
+          branch:live.branch||'main',token:live.token});
+        await setSession('team','admin');ADMIN=true;
+        await ghStart();
+        return;
+      }
+      /* set up already? then the PIN, and never the passphrase again */
+      if(ghPinBox())ghPinLock(); else ghTeamLock();
       return;
     }
     if(ghCfgLoad()){
       STORE.mode='github';STORE.label='Team repo';
       await ghStart();
-      return;
-    }
-    /* a shared password is baked in: ask for that and nothing else */
-    if(GHENC){
-      STORE.mode='github';STORE.label='Team repo';
-      ghTeamLock();
       return;
     }
     if(cloudCfgLoad()){
