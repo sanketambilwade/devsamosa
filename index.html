@@ -195,6 +195,8 @@ td.n,th.n{text-align:right;white-space:nowrap}
 .st.progress{background:rgba(10,132,255,.18);color:var(--blue)}
 .st.blocked{background:rgba(255,59,48,.16);color:var(--red)}
 .st.done{background:rgba(52,199,89,.16);color:var(--green)}
+.st.ooo{background:rgba(191,90,242,.16);color:var(--purple)}
+.st.unassigned{background:rgba(255,159,10,.16);color:var(--saffron)}
 .av{width:30px;height:30px;border-radius:10px;flex:0 0 auto;display:grid;place-items:center;
   font-size:11.5px;font-weight:700;color:#fff;letter-spacing:-.02em}
 .nm{display:flex;align-items:center;gap:9px;flex-wrap:nowrap}
@@ -626,6 +628,8 @@ select.c-st{font-weight:600;text-align:center;border-radius:980px;padding:4px 6p
 .gt select.c-st.s-progress{background-color:rgba(10,132,255,.2);color:var(--blue)}
 .gt select.c-st.s-blocked{background-color:rgba(255,59,48,.2);color:var(--red)}
 .gt select.c-st.s-done{background-color:rgba(52,199,89,.2);color:var(--green)}
+.gt select.c-st.s-ooo{background-color:rgba(191,90,242,.2);color:var(--purple)}
+.gt select.c-st.s-unassigned{background-color:rgba(255,159,10,.2);color:var(--saffron)}
 
 .gt tr.ghost select.c-st{opacity:.5}
 .gt tr:hover select.c-st,.gt tr:focus-within select.c-st{opacity:1}
@@ -1844,7 +1848,12 @@ const initials=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).joi
 const nextWork=d=>{let x=d,i=0;while(D.wknd(x)&&i++<7)x=D.add(x,1);return x};
 const prevWork=d=>{let x=d,i=0;while(D.wknd(x)&&i++<7)x=D.add(x,-1);return x};
 const ROLES=['—','SDE 1','SDE 2','SDE 3','LD 1','LD 2','Intern'];
-const STLABEL={planned:'Not started',progress:'In progress',blocked:'Blocked',done:'Done'};
+const STLABEL={planned:'Not started',progress:'In progress',blocked:'Blocked',done:'Done',
+  ooo:'Out of office',unassigned:'Not assigned'};
+/* the pill on the Today sheet shows these shorter forms; the first four are the
+   wording that was already there, so only the new two read differently */
+const STSHORT={planned:'planned',progress:'progress',blocked:'blocked',done:'done',
+  ooo:'OOO',unassigned:'not assigned'};
 const avOf=p=>p.avail||(nextFree(p.id)<=D.today()?'free':'busy');
 const sortedPeople=()=>[...DB.people].sort((a,b)=>a.name.localeCompare(b.name));
 const hue=id=>PAL[[...String(id)].reduce((s,c)=>s+c.charCodeAt(0),0)%PAL.length];
@@ -1942,7 +1951,9 @@ function render(){
 
 /* ==================== view: today (live grid) ==================== */
 let day=D.today();
-const STATUSES=['planned','progress','blocked','done'];
+const STATUSES=['planned','progress','blocked','done','ooo','unassigned'];
+/* neither of these is work being done, so reports must not count them as active */
+const WORKING=s=>s!=='ooo'&&s!=='unassigned';
 let DETAILS=false;
 
 /* ==================== history ==================== */
@@ -2092,7 +2103,8 @@ function vToday(){
   const H=DETAILS?'':' hidden';
 
   const prOpts=sel=>DB.projects.map(p=>`<option value="${p.id}" ${sel===p.id?'selected':''}>${esc(p.name)}</option>`).join('');
-  const stOpts=sel=>STATUSES.map(s=>`<option value="${s}" ${sel===s?'selected':''}>${s}</option>`).join('');
+  const stOpts=sel=>STATUSES.map(s=>
+    `<option value="${s}" ${sel===s?'selected':''}>${STSHORT[s]||s}</option>`).join('');
 
   const body=ppl.map(p=>{
     const mine=rows.filter(r=>r.personId===p.id);
@@ -2372,7 +2384,8 @@ function aiReview(items,how){
       <td><select class="rpr">${DB.projects.map(p=>`<option value="${p.id}" ${prid===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></td>
       <td><input class="rt" value="${esc(it.t||'')}"></td>
       <td><input class="re" type="number" step=".5" min="0" value="${+it.e||0}" style="width:64px;text-align:right"></td>
-      <td><select class="rs">${STATUSES.map(s=>`<option value="${s}" ${(it.s||'progress')===s?'selected':''}>${s}</option>`).join('')}</select></td>
+      <td><select class="rs">${STATUSES.map(s=>
+        `<option value="${s}" ${(it.s||'progress')===s?'selected':''}>${STSHORT[s]||s}</option>`).join('')}</select></td>
     </tr>`}).join('');
   const unmatched=items.filter(it=>!matchPerson(it.n||'')).length;
   modal(`<div class="ch"><h2>Review before adding</h2>
@@ -2860,7 +2873,8 @@ function periodRange(){
     default:return[rep.from||D.add(t,-30),rep.to||t];
   }
 }
-const STCOLOR={planned:'var(--grey)',progress:'var(--blue)',blocked:'var(--red)',done:'var(--green)'};
+const STCOLOR={planned:'var(--grey)',progress:'var(--blue)',blocked:'var(--red)',done:'var(--green)',
+  ooo:'var(--purple)',unassigned:'var(--saffron)'};
 
 function vReports(){
   const[from,to]=periodRange();
@@ -2878,7 +2892,7 @@ function vReports(){
     .sort((a,b)=>b.n-a.n);
   const max=Math.max(1,...list.map(x=>x.n));
   const st={};STATUSES.forEach(s=>st[s]=rows.filter(r=>r.status===s).length);
-  const active=new Set(rows.map(r=>r.personId)).size;
+  const active=new Set(rows.filter(r=>WORKING(r.status)).map(r=>r.personId)).size;
   const projects=new Set(rows.map(r=>r.projectId)).size;
   const anyHrs=rows.some(r=>+r.est>0);
   const days=[...new Set(rows.map(r=>r.date))].sort();
@@ -3159,7 +3173,8 @@ function allSheets(){
   const upd=[...DB.updates].filter(u=>u.task).sort((a,b)=>a.date<b.date?-1:1);
   return [
     {name:'Updates',rows:[['Date','Person','Role','Project','Task','Est (h)','Spent (h)','Status'],
-      ...upd.map(r=>[r.date,pname(r.personId),person(r.personId)?.role||'',prname(r.projectId),r.task,+r.est||0,+r.spent||0,r.status])]},
+      ...upd.map(r=>[r.date,pname(r.personId),person(r.personId)?.role||'',prname(r.projectId),r.task,
+        +r.est||0,+r.spent||0,STLABEL[r.status]||r.status])]},
     {name:'Allocations',rows:[['Person','Project','Start','End','Allocation %','Working days','Next free','Note'],
       ...[...DB.allocs].sort((a,b)=>a.start<b.start?-1:1)
         .map(a=>[pname(a.personId),prname(a.projectId),a.start,a.end,a.pct||100,D.wdays(a.start,a.end),D.add(a.end,1),a.note||''])]},
@@ -3280,6 +3295,8 @@ function xlHours(v){
 function xlStatus(v,date){
   const s=String(v||'').toLowerCase().trim();
   if(STATUSES.includes(s))return s;
+  if(/ooo|out of office|on leave|leave|holiday|vacation|pto|absent|off/.test(s))return 'ooo';
+  if(/not assigned|unassigned|no work|nothing|idle|bench|free/.test(s))return 'unassigned';
   if(/block|hold|stuck|wait|depend/.test(s))return 'blocked';
   if(/done|complete|closed|finish|deliver|ship|merged|yes/.test(s))return 'done';
   if(/plan|todo|to do|not started|backlog|upcoming/.test(s))return 'planned';
