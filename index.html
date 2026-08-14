@@ -19,7 +19,13 @@
   --r:22px; --r2:14px; --r3:10px;
   --sans:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Inter',system-ui,'Segoe UI',sans-serif;
   --blur:saturate(180%) blur(30px);
+  /* the Home Screen app runs under the status bar and notch (viewport-fit=cover
+     plus black-translucent), so every full-screen surface has to inset itself.
+     Only the bottom one existed, which left the ••• button under the notch. */
+  --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-l:env(safe-area-inset-left,0px);
+  --safe-r:env(safe-area-inset-right,0px);
 }
 :root[data-t="dark"]{
   color-scheme:dark;
@@ -49,7 +55,8 @@ html,body{margin:0;padding:0}
 body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:15px;line-height:1.45;
   min-height:100vh;overflow-x:hidden;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
 #bg{position:fixed;inset:0;z-index:0;pointer-events:none}
-#app{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:0 16px calc(112px + var(--safe-b))}
+#app{position:relative;z-index:2;max-width:1400px;margin:0 auto;
+  padding:var(--safe-t) calc(16px + var(--safe-r)) calc(112px + var(--safe-b)) calc(16px + var(--safe-l))}
 @media(min-width:861px){#app{padding-bottom:56px}}
 
 /* ---------------- glass primitives ---------------- */
@@ -161,7 +168,8 @@ nav.top{display:flex;margin-bottom:16px}
 nav.top .seg{width:100%}
 @media(max-width:860px){nav.top{display:none}}
 /* mobile tab bar */
-nav.tabs{display:none;position:fixed;left:10px;right:10px;bottom:calc(10px + var(--safe-b));z-index:40;
+nav.tabs{display:none;position:fixed;left:calc(10px + var(--safe-l));right:calc(10px + var(--safe-r));
+  bottom:calc(10px + var(--safe-b));z-index:40;
   background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
   border:1px solid var(--stroke);border-radius:24px;box-shadow:var(--shadow);padding:7px 5px}
 @media(max-width:860px){nav.tabs{display:flex}}
@@ -297,7 +305,9 @@ td.n,th.n{text-align:right;white-space:nowrap}
 .hidden{display:none!important}
 
 /* ---------------- lock screen ---------------- */
-#lock{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:22px}
+#lock{position:fixed;inset:0;z-index:90;display:grid;place-items:center;
+  padding:calc(22px + var(--safe-t)) calc(22px + var(--safe-r)) calc(22px + var(--safe-b)) calc(22px + var(--safe-l));
+  overflow-y:auto}
 .lockcard.wide2{max-width:440px}
 .lockcard{width:100%;max-width:380px;background:var(--glass);backdrop-filter:saturate(180%) blur(44px);
   -webkit-backdrop-filter:saturate(180%) blur(44px);border:1px solid var(--stroke);border-radius:30px;
@@ -436,7 +446,7 @@ button,.chip,.cday,.mi,.pki,.bk,.seg button{touch-action:manipulation}
 .cal,.scrollx,.calin{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
 
 @media (max-width:720px){
-  #app{padding:0 12px calc(104px + var(--safe-b))}
+  #app{padding:var(--safe-t) calc(12px + var(--safe-r)) calc(104px + var(--safe-b)) calc(12px + var(--safe-l))}
   header{padding:10px 0 8px;gap:9px}
   .glass{border-radius:18px}
   .tbar{padding:10px;gap:6px}
@@ -762,7 +772,7 @@ header{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media print{#bg,nav,.hbtns,.ticker,button{display:none!important}
   body{background:#fff;color:#000}.glass{background:#fff;border:1px solid #ddd;box-shadow:none;break-inside:avoid}
-  #app{padding:0;max-width:none}}
+  #app{padding:var(--safe-t) var(--safe-r) 0 var(--safe-l);max-width:none}}
 </style>
 
 <canvas id="bg"></canvas>
