@@ -18,3 +18,9 @@ people/
 node_modules/
 .DS_Store
 Thumbs.db
+
+# Built binaries — distribute these as GitHub Releases, not repo files
+dist/
+packaging/android/.build/
+packaging/win/bin/
+packaging/win/obj/
