@@ -347,6 +347,8 @@ td.n,th.n{text-align:right;white-space:nowrap}
   box-shadow:var(--shadow);max-width:88vw;text-align:center}
 @media(min-width:861px){#toast{bottom:26px}}
 #toast.on{transform:translate(-50%,0);opacity:1}
+.tundo{pointer-events:auto;margin-left:10px;background:none;border:0;padding:0;cursor:pointer;
+  color:var(--blue);font:inherit;font-weight:600}
 #toast.err{color:var(--red)}
 .skel{height:14px;border-radius:7px;background:var(--fill);margin:11px 0;animation:pl 1.4s ease-in-out infinite}
 @keyframes pl{50%{opacity:.45}}
@@ -1641,8 +1643,13 @@ setInterval(async()=>{
     if(f.lastModified>STORE.mtime+1200){STORE.mtime=f.lastModified;await load();render();toast('Updated from the shared file')}
   }catch(e){}
 },20000);
-function toast(m,err){const t=$('#toast');t.textContent=m;t.className='on'+(err?' err':'');
-  clearTimeout(t._x);t._x=setTimeout(()=>t.className='',2900)}
+function toast(m,err,undo){
+  const t=$('#toast');
+  t.innerHTML=esc(m)+(undo?' <button type="button" class="tundo">Undo</button>':'');
+  t.className='on'+(err?' err':'');
+  if(undo)t.querySelector('.tundo').onclick=()=>{undo();t.className=''};
+  clearTimeout(t._x);t._x=setTimeout(()=>t.className='',undo?7000:2900);
+}
 
 /* ==================== auth ==================== */
 async function hash(s){
@@ -2110,9 +2117,45 @@ function listEnter(e,ta){
   return true;
 }
 
+/* Yesterday's unfinished work, moved onto today. Done tasks are deliberately
+   left behind so the list stays the size of the work still in flight.
+   Top level, not attached inside vToday: the automatic call happens on the
+   first render, before any handler wiring has run. */
+function carryOver(auto){
+    let src=D.add(day,-1);for(let i=0;i<5&&!DB.updates.some(u=>u.date===src&&u.task);i++)src=D.add(src,-1);
+    /* done work is finished, and OOO / not assigned / not in the call describe
+       that day only — neither is work still in flight */
+    const prev=DB.updates.filter(u=>u.date===src&&u.task&&u.status!=='done'&&WORKING(u.status));
+    /* returns whether it rendered: the automatic caller must fall through and
+       draw the table itself when there was nothing to bring over, or the screen
+       is left blank */
+    if(!prev.length){if(!auto)toast('Nothing to copy from the previous day',1);return false}
+    const added=[];
+    prev.forEach(r=>{if(DB.updates.some(u=>u.date===day&&u.personId===r.personId&&u.task===r.task))return;
+      const id=uid();
+      DB.updates.push({...r,id,date:day,spent:0,status:r.status==='blocked'?'blocked':'progress'});
+      added.push(id)});
+    save();
+    const undo=()=>{DB.updates=DB.updates.filter(u=>!added.includes(u.id));save('Carry-forward undone');render()};
+    if(!added.length){return false}
+    toast(`Carried ${added.length} task${added.length===1?'':'s'} from ${D.short(src)}`,0,undo);
+    render();
+    return true;
+}
+
 function vToday(){
   if(!DB.people.length)return firstRun();
   if(todayMode==='history')return vHistory();
+  /* Opening today's board for the first time pulls yesterday's unfinished work
+     forward, so the call starts from what is still in flight rather than a blank
+     sheet. Done tasks are not carried, so the list stays the length of the work.
+     Marked per date, so clearing a row does not make it come back, and only for
+     today, so browsing history is never rewritten. */
+  if(ADMIN&&day===D.today()&&!(DB.carried||[]).includes(day)
+     &&!DB.updates.some(u=>u.date===day&&u.task)){
+    DB.carried=[...(DB.carried||[]).slice(-30),day];
+    if(carryOver(1))return;      /* it re-rendered; otherwise carry on and draw */
+  }
   const ppl=sortedPeople();
   const rows=DB.updates.filter(u=>u.date===day);
   const reported=new Set(rows.filter(r=>r.task).map(r=>r.personId)).size;
@@ -2189,7 +2232,7 @@ function vToday(){
   $('#xl').onclick=()=>xlsx([{name:'Standup',rows:dayTable(day)}],`devsamosa-standup-${day}`);
   $('#edit').onclick=e=>miniMenu(e.currentTarget,[
     [DETAILS?'Hide hours column':'Show hours column',()=>{DETAILS=!DETAILS;render()}],
-    ['Copy yesterday',()=>window.carryOver&&window.carryOver()],
+    ['Copy yesterday',()=>carryOver()],
     ['Add developer',personForm],
     ['Import from Excel',importForm]
   ]);
@@ -2198,14 +2241,7 @@ function vToday(){
     save();$('#savedat').textContent='Saved '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
     toast('Saved');
   };
-  window.carryOver=()=>{
-    let src=D.add(day,-1);for(let i=0;i<5&&!DB.updates.some(u=>u.date===src&&u.task);i++)src=D.add(src,-1);
-    const prev=DB.updates.filter(u=>u.date===src&&u.task&&u.status!=='done');
-    if(!prev.length)return toast('Nothing to copy from the previous day',1);
-    let n=0;prev.forEach(r=>{if(DB.updates.some(u=>u.date===day&&u.personId===r.personId&&u.task===r.task))return;
-      DB.updates.push({...r,id:uid(),date:day,spent:0,status:r.status==='blocked'?'blocked':'progress'});n++});
-    save();toast(`Copied ${n} task${n===1?'':'s'} from ${D.short(src)}`);render();
-  };
+
 
   const tas=$$('#main .c-tk');
   tas.forEach(autoGrow);
