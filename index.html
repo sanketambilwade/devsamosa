@@ -200,6 +200,7 @@ td.n,th.n{text-align:right;white-space:nowrap}
 .st.done{background:rgba(52,199,89,.16);color:var(--green)}
 .st.ooo{background:rgba(191,90,242,.16);color:var(--purple)}
 .st.unassigned{background:rgba(255,159,10,.16);color:var(--saffron)}
+.st.notcall{background:rgba(94,92,230,.2);color:#9B99F5}
 .av{width:30px;height:30px;border-radius:10px;flex:0 0 auto;display:grid;place-items:center;
   font-size:11.5px;font-weight:700;color:#fff;letter-spacing:-.02em}
 .nm{display:flex;align-items:center;gap:9px;flex-wrap:nowrap}
@@ -633,6 +634,7 @@ select.c-st{font-weight:600;text-align:center;border-radius:980px;padding:4px 6p
 .gt select.c-st.s-done{background-color:rgba(52,199,89,.2);color:var(--green)}
 .gt select.c-st.s-ooo{background-color:rgba(191,90,242,.2);color:var(--purple)}
 .gt select.c-st.s-unassigned{background-color:rgba(255,159,10,.2);color:var(--saffron)}
+.gt select.c-st.s-notcall{background-color:rgba(94,92,230,.24);color:#9B99F5}
 
 .gt tr.ghost select.c-st{opacity:.5}
 .gt tr:hover select.c-st,.gt tr:focus-within select.c-st{opacity:1}
@@ -1865,11 +1867,11 @@ const nextWork=d=>{let x=d,i=0;while(D.wknd(x)&&i++<7)x=D.add(x,1);return x};
 const prevWork=d=>{let x=d,i=0;while(D.wknd(x)&&i++<7)x=D.add(x,-1);return x};
 const ROLES=['—','SDE 1','SDE 2','SDE 3','LD 1','LD 2','Intern'];
 const STLABEL={planned:'Not started',progress:'In progress',blocked:'Blocked',done:'Done',
-  ooo:'Out of office',unassigned:'Not assigned'};
+  ooo:'Out of office',unassigned:'Not assigned',notcall:'Not in the call'};
 /* the pill on the Today sheet shows these shorter forms; the first four are the
    wording that was already there, so only the new two read differently */
 const STSHORT={planned:'planned',progress:'progress',blocked:'blocked',done:'done',
-  ooo:'OOO',unassigned:'not assigned'};
+  ooo:'OOO',unassigned:'not assigned',notcall:'not in call'};
 const avOf=p=>p.avail||(nextFree(p.id)<=D.today()?'free':'busy');
 const sortedPeople=()=>[...DB.people].sort((a,b)=>a.name.localeCompare(b.name));
 const hue=id=>PAL[[...String(id)].reduce((s,c)=>s+c.charCodeAt(0),0)%PAL.length];
@@ -1967,9 +1969,9 @@ function render(){
 
 /* ==================== view: today (live grid) ==================== */
 let day=D.today();
-const STATUSES=['planned','progress','blocked','done','ooo','unassigned'];
+const STATUSES=['planned','progress','blocked','done','ooo','unassigned','notcall'];
 /* neither of these is work being done, so reports must not count them as active */
-const WORKING=s=>s!=='ooo'&&s!=='unassigned';
+const WORKING=s=>s!=='ooo'&&s!=='unassigned'&&s!=='notcall';
 let DETAILS=false;
 
 /* ==================== history ==================== */
@@ -2219,13 +2221,13 @@ function vToday(){
       if(e.key==='Enter'&&!e.shiftKey)listEnter(e,ta);
     };
     tr.querySelector('.c-es').oninput=deb;
-    tr.querySelector('.c-pr').onchange=commit;
+    tr.querySelector('.c-pr').onchange=()=>cellCommit(tr,1);
     const st=tr.querySelector('.c-st');
-    st.onchange=()=>{st.className='c-st s-'+st.value;commit()};
+    st.onchange=()=>{st.className='c-st s-'+st.value;cellCommit(tr,1)};
     tr.querySelector('.bul').onclick=()=>{toggleList(ta,'bul');commit()};
     tr.querySelector('.num').onclick=()=>{toggleList(ta,'num');commit()};
     tr.querySelector('.more').onclick=()=>{
-      cellCommit(tr);
+      cellCommit(tr,1);
       if(!tr.dataset.id)return ta.focus();
       DB.updates.push({id:uid(),date:day,personId:tr.dataset.p,projectId:tr.querySelector('.c-pr').value,
         task:'',est:0,spent:0,status:'progress'});
@@ -2247,7 +2249,7 @@ function vToday(){
   });
 }
 
-function cellCommit(tr){
+function cellCommit(tr,force){
   if(!ADMIN)return;
   const task=tr.querySelector('.c-tk').value.trim();
   const sp=tr.querySelector('.c-sp'),prev=DB.updates.find(x=>x.id===tr.dataset.id);
@@ -2257,7 +2259,9 @@ function cellCommit(tr){
     status:tr.querySelector('.c-st').value};
   let id=tr.dataset.id;
   if(!id){
-    if(!task)return;
+    /* picking a project or a status counts as real input; without force these
+       were thrown away on an empty task and the next render reset the row */
+    if(!task&&!force)return;
     id=uid();DB.updates.push({id,date:day,...rec});tr.dataset.id=id;tr.classList.remove('ghost');
     const cell=tr.querySelector('td:last-child');
     if(!cell.querySelector('.del')){
@@ -2890,7 +2894,7 @@ function periodRange(){
   }
 }
 const STCOLOR={planned:'var(--grey)',progress:'var(--blue)',blocked:'var(--red)',done:'var(--green)',
-  ooo:'var(--purple)',unassigned:'var(--saffron)'};
+  ooo:'var(--purple)',unassigned:'var(--saffron)',notcall:'var(--indigo)'};
 
 function vReports(){
   const[from,to]=periodRange();
@@ -3312,6 +3316,7 @@ function xlStatus(v,date){
   const s=String(v||'').toLowerCase().trim();
   if(STATUSES.includes(s))return s;
   if(/ooo|out of office|on leave|leave|holiday|vacation|pto|absent|off/.test(s))return 'ooo';
+  if(/not in (the )?call|no ?show|did ?n.?t join|missed|absent from/.test(s))return 'notcall';
   if(/not assigned|unassigned|no work|nothing|idle|bench|free/.test(s))return 'unassigned';
   if(/block|hold|stuck|wait|depend/.test(s))return 'blocked';
   if(/done|complete|closed|finish|deliver|ship|merged|yes/.test(s))return 'done';
