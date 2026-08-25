@@ -118,7 +118,9 @@ CLAIMED=[]      # every standing spot handed out, so no two places can share one
 TABLETOP=179        # the meeting table's own top edge; the far row's legs disappear under it
 MEETCHAIRS=[(515,205),(570,205),(628,205),(685,205),(740,205),          # far side, facing down
             (515,267),(570,267),(628,267),(685,267),(740,267),          # near side, facing up
-            (462,237),(794,238)]                                        # the two ends
+            (462,229),(794,230)]     # the two ends, seen side-on: high enough that the seat
+                                     # and castors show under the occupant instead of a shoe
+                                     # crossing the wheelbase
 # Measured off the plate, not eyeballed: the first pass had them all a few pixels left of the
 # real chairs, so the redrawn backrest sat beside its occupant instead of round them.
 MEETNEAR=[(497,240,534,284),(552,240,589,284),(610,240,647,284),
