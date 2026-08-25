@@ -76,6 +76,48 @@ for (l,t,r,b) in chairrects:
             if ov>0 and grid[gy][gx]: grid[gy][gx]=0; blocked+=1
 print('cells blocked by chair geometry:',blocked)
 
+# The pantry, lounge and lobby side of the office cannot be classified by colour. Under the
+# lights the whole zone is one warm grey; with the lights out it is one blue-grey, and the
+# floor (30,32,61) sits inside a couple of points of the counter cabinets (37,39,66) and the
+# bookshelf (31,33,59). No threshold separates them, which is why people were standing on the
+# counter and walking through the sofa. These are measured off PLATE.png with z-ruler.py and
+# checked against the overlay afterwards; the rug and the ENTRY and MEETING ROOM decals stay
+# walkable on purpose, they are floor you can stand on.
+FURNITURE=[
+  # pantry
+  (1072, 98,1112,180),   # water cooler, left
+  (1116, 70,1175,203),   # fridge
+  (1178,104,1408,190),   # counter run: microwave, jars, sink, cabinets
+  (1406, 72,1458,144),   # plant
+  (1457, 72,1497,148),   # water cooler, right
+  (1282,214,1352,262),   # round table
+  (1248,214,1284,262),   # chair, left
+  (1350,214,1390,262),   # chair, right
+  (1300,258,1338,302),   # stool
+  # server and lounge
+  (1116,338,1180,452),   # server rack
+  (1258,486,1430,556),   # sofa
+  (1292,580,1406,650),   # coffee table
+  (1434,446,1497,540),   # plant
+  (1441,543,1497,686),   # bookshelf
+  # coffee bar, vending, lobby
+  (1156,694,1284,800),   # coffee machine and cups
+  (1284,702,1362,800),   # drinks fridge
+  (1156,872,1312,898),   # bench
+  (1125,923,1169,988),   # plant
+  (1316,897,1347,944),   # water dispenser
+  (1353,935,1384,975),   # bin
+  (1463,758,1497,785),   # bin
+]
+fblocked=0
+for (l,t,r,b) in FURNITURE:
+    for gy in range(max(0,t//CELL),min(GH,(b//CELL)+1)):
+        for gx in range(max(0,l//CELL),min(GW,(r//CELL)+1)):
+            cl,ct=gx*CELL,gy*CELL
+            ov=max(0,min(r,cl+CELL)-max(l,cl))*max(0,min(b,ct+CELL)-max(t,ct))
+            if ov>0 and grid[gy][gx]: grid[gy][gx]=0; fblocked+=1
+print('cells blocked by pantry/lounge furniture:',fblocked)
+
 # keep one connected region so every destination is reachable
 comp=[[-1]*GW for _ in range(GH)]; n=0; size={}
 for sy in range(GH):
@@ -226,6 +268,16 @@ def spotsNear(x,y,n=10,rad=256):
         CLAIMED.append(b); out.append((px,py,gx,gy))
         if len(out)>=n: break
     return out
+# Nobody stands on top of somebody who is sitting down. Every chair in the room is claimed
+# before a single standing spot is handed out, so a conversation in an aisle cannot put one
+# person inside another one's seat. Without this a huddle seeded between two desk rows picked
+# the nearest walkable cells, which are the ones right beside a chair, and the standing sprite
+# covered the seated one - which is what "people are standing in the objects" looked like out
+# on the floor, as opposed to the pantry, where the grid itself was wrong.
+for (sx,sy) in seatpos:   CLAIMED.append(sbox(sx,sy,2))
+for (sx,sy) in MEETCHAIRS: CLAIMED.append(sbox(sx,sy,2))
+print('chairs claimed before standing spots:',len(CLAIMED))
+
 for k,(x,y) in DEST.items():
     e=entry(x,y,k)
     e['spots']=[dict(entry(px,py,look=(x,y)),ax=gx,ay=gy) for px,py,gx,gy in spotsNear(x,y)]
@@ -277,9 +329,42 @@ def cut(l,t,r,b,clip=CLIP):
             'clip':clip}
 data['frontChairs']=([cut(*rc) for rc in chairrects]
                    + [cut(*rc) for rc in MEETNEAR])
-data['screens']=[{'x':round(r[0]/W,5),'y':round(r[1]/H,5),
-                  'w':round((r[2]-r[0])/W,5),'h':round((r[3]-r[1])/H,5)} if r else None
-                 for r in CH['screens']]
+# The measured rectangle is the whole monitor - bezel, stand and all - so lighting it up lit
+# the frame as well as the glass, and the code lines ran off the screen onto the plastic. The
+# glass is the near-black region inside it; found per monitor rather than by one average inset,
+# because the desks are drawn at a few different sizes across the three rows.
+def glassOf(r):
+    # Row and column profiles, not a bounding box of every dark pixel: the stand below the
+    # monitor and the shadow under its lip are dark too, and a bounding box swallowed both,
+    # which left the inset at 3% and the screen still lighting up its own frame. A row counts
+    # as glass when most of it is glass, and we keep the run through the middle.
+    l,t,rr,b=r; w,h=rr-l,b-t
+    if w<6 or h<6: return r
+    dark=lambda c: c[0]<75 and c[2]<105 and c[2]>=c[0]-4
+    rows=[sum(1 for x in range(l,rr) if dark(px[x,y]))>=w*0.7 for y in range(t,b)]
+    cols=[sum(1 for y in range(t,b) if dark(px[x,y]))>=h*0.5 for x in range(l,rr)]
+    def run(flags,mid):
+        if not flags[mid]:
+            near=[i for i,f in enumerate(flags) if f]
+            if not near: return None
+            mid=min(near,key=lambda i:abs(i-mid))
+        a2=b2=mid
+        while a2>0 and flags[a2-1]: a2-=1
+        while b2<len(flags)-1 and flags[b2+1]: b2+=1
+        return a2,b2
+    ry=run(rows,h//2); rx=run(cols,w//2)
+    if not ry or not rx or ry[1]-ry[0]<3 or rx[1]-rx[0]<3: return r
+    return (l+rx[0],t+ry[0],l+rx[1]+1,t+ry[1]+1)
+_ins=[]
+def scr(r):
+    g=glassOf(r)
+    _ins.append((round((g[0]-r[0])/(r[2]-r[0]),3),round((r[3]-g[3])/(r[3]-r[1]),3)))
+    return {'x':round(g[0]/W,5),'y':round(g[1]/H,5),
+            'w':round((g[2]-g[0])/W,5),'h':round((g[3]-g[1])/H,5)}
+data['screens']=[scr(r) if r else None for r in CH['screens']]
+print('glass inset, left and bottom, as a fraction of the monitor:',
+      'L %.2f-%.2f  B %.2f-%.2f'%(min(i[0] for i in _ins),max(i[0] for i in _ins),
+                                  min(i[1] for i in _ins),max(i[1] for i in _ins)))
 print('desk screens:',sum(1 for r in data['screens'] if r))
 print('anchors whose nearest walkable cell is far:',far or 'none')
 json.dump(data,open(os.path.join(HERE,'office-layout.json'),'w'),indent=1)
