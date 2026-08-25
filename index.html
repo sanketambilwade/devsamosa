@@ -349,13 +349,30 @@ td.n,th.n{text-align:right;white-space:nowrap}
   padding:calc(22px + var(--safe-t)) calc(22px + var(--safe-r)) calc(22px + var(--safe-b)) calc(22px + var(--safe-l));
   overflow-y:auto}
 .lockcard.wide2{max-width:440px}
+/* Signing in is being handed a pass, so the card is one: saffron header strip, the mark in
+   a portrait frame, a dashed rule where the badge has one, and it swings in on its lanyard. */
 .lockcard{width:100%;max-width:380px;background:var(--paper);border:var(--pbw) solid var(--edge);
-  border-radius:var(--rp);box-shadow:var(--pshadow),var(--shadow);
-  padding:32px 26px 26px;text-align:center;animation:pop .4s cubic-bezier(.2,.9,.25,1)}
-.lockcard .mark{width:62px;height:62px;margin:0 auto 16px}
+  border-radius:var(--rp);box-shadow:var(--pshadow),var(--shadow);position:relative;overflow:hidden;
+  padding:52px 26px 26px;text-align:center;transform-origin:50% -30px;
+  animation:badgein .72s cubic-bezier(.24,.9,.28,1.06) both}
+.lockcard::before{content:'DEVSAMOSA';position:absolute;left:0;right:0;top:0;height:32px;
+  background:var(--saffron);border-bottom:var(--pbw) solid var(--edge);
+  font:700 9px/32px var(--mono);letter-spacing:.24em;color:#3a2f14;text-align:left;text-indent:14px}
+.lockcard::after{content:'ACCESS';position:absolute;right:14px;top:0;
+  font:700 9px/32px var(--mono);letter-spacing:.18em;color:#3a2f14}
+@keyframes badgein{
+  0%{opacity:0;transform:translateY(-34px) rotate(-7deg)}
+  55%{opacity:1;transform:translateY(3px) rotate(2.2deg)}
+  78%{transform:translateY(0) rotate(-1deg)}
+  100%{opacity:1;transform:none}
+}
+@media (prefers-reduced-motion:reduce){.lockcard{animation:none}}
+.lockcard .mark{width:52px;height:52px;margin:0 auto 15px;padding:9px;
+  background:#efe6d2;border:var(--pbw) solid var(--edge);box-sizing:content-box}
+.lockcard p.tag{padding-bottom:17px;border-bottom:2px dashed var(--pdash)}
 .lockcard h1{margin:0 0 4px;font-size:27px;font-weight:700;letter-spacing:-.04em}
 .lockcard a{color:var(--blue);text-decoration:none}
-.lockcard p.tag{margin:0 0 24px;font-size:14px;color:var(--txt2)}
+.lockcard p.tag{margin:0 0 20px;font-size:14px;color:var(--txt2)}
 .lockcard label.f{text-align:left;margin-bottom:13px}
 #pass{text-align:center;font-family:var(--mono);font-size:21px;letter-spacing:.34em;padding:13px;font-weight:700}
 #pass::placeholder{letter-spacing:.1em;font-size:15px;font-weight:400}
@@ -537,9 +554,8 @@ td.n,th.n{text-align:right;white-space:nowrap}
   font:700 7.5px/1 var(--sans);letter-spacing:1px;color:#3a2f14}
 .ofc-face{border:0;background:none;padding:7px 0 0;cursor:pointer;display:flex;justify-content:center}
 .ofc-frame{border:2px solid #22201e;width:66px;height:77px;overflow:hidden;line-height:0}
-.ofc-pt{position:relative;width:96px;height:112px;background:#efe6d2;
-  transform:scale(.6875);transform-origin:0 0}
-.ofc-pt i{position:absolute;display:block}
+.ofc-frame{background:#efe6d2}
+.ofc-pph{display:block;width:66px;height:77px;background-repeat:no-repeat;image-rendering:pixelated}
 .ofc-bname{padding:6px 5px 2px;font:700 11px/1.15 var(--sans);color:#22201e;text-align:center;
   cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ofc-bpr{padding:1px 6px 3px;font:700 7px/1.25 ui-monospace,Menlo,Consolas,monospace;
@@ -569,12 +585,26 @@ td.n,th.n{text-align:right;white-space:nowrap}
   image-rendering:pixelated;cursor:pointer;padding:0}
 .ofc-pk.on{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue)}
 @media(max-width:720px){
-  /* The badge holds a status control now, and the rule that stops iOS zooming a focused
-     field forces every select to 16px — so the card widens to hold it rather than clipping
-     "WORKING" in half. */
-  .ofc-badge{flex-basis:114px;width:114px}
-  .ofc-bsel{letter-spacing:.2px;min-height:30px}
-  .ofc-bpr{font-size:6.5px;letter-spacing:.03em}
+  /* The floor is 3:2, so fitted to a portrait phone it is 360x240 and everybody is 12px tall.
+     It renders wider than the screen inside a scrolling frame instead — twice the size, name
+     plates legible again, and you swipe the room to reach the pantry. */
+  .ofc-view{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;overscroll-behavior-x:contain}
+  .ofc-view::-webkit-scrollbar{display:none}
+  .ofc-board{width:172%;max-width:none}
+  .ofc-tag{display:block;font-size:6px;letter-spacing:.4px;padding:1px 3px 0;border-radius:1px}
+  /* the cards give up the room the floor just took */
+  .ofc-badge{flex-basis:82px;width:82px}
+  .ofc-frame{width:52px;height:61px}
+  .ofc-pph{width:52px;height:61px;background-size:310.6px 698.9px;background-position:-12.8px -468.3px}
+  .ofc-bhd{font-size:6.5px;letter-spacing:.6px}
+  .ofc-bname{font-size:10px;padding:4px 4px 1px}
+  .ofc-bst{margin:1px 5px 5px}
+  /* A select opens a picker on iOS rather than a keyboard, so it does not trigger the
+     zoom-on-focus that the blanket 16px rule further up exists to prevent. */
+  .ofc-bsel{font-size:9px!important;letter-spacing:.3px;min-height:28px}
+  .ofc-bpr{font-size:6px;letter-spacing:.02em;padding:1px 4px 2px}
+  .ofc-bst i{width:5px;height:5px}
   /* Six controls, no room: the clock, phase and light switch hold one line and the jump
      buttons get their own scrolling row. The light switch was landing 80px past the right
      edge, which made it unreachable rather than merely cramped. */
@@ -587,11 +617,6 @@ td.n,th.n{text-align:right;white-space:nowrap}
   .ofc-jump::-webkit-scrollbar{display:none}
   .ofc-jb{flex:0 0 auto;min-height:32px;padding:0 12px;display:inline-flex;align-items:center}
   .ofc-clock{font-size:19px}
-  .ofc-board{width:100%}
-  /* at phone size a sprite is about 12px wide and its name tag is three times that, so the
-     labels bury the room. The cards underneath carry the names; tap a desk for one person. */
-  .ofc-tag{display:none}
-  .ofc-pick{grid-template-columns:repeat(5,1fr)}
 }
 /* Critters off in the ••• menu stops the office moving too */
 .nocrit .ofc-p .ofc-spr,.nocrit .ofc-scr i{animation:none!important}
@@ -2261,10 +2286,10 @@ function smooth(cells){
 }
 
 /* ---------- the day ---------- */
-const DAY=[{t:[600,630],n:'Standup',at:'meet'},
-           {t:[690,710],n:'Tea',    at:'tea'},
-           {t:[780,840],n:'Lunch',  at:'lunch'},
-           {t:[960,982],n:'Tea',    at:'tea'}];
+const DAY=[{t:[600,630],n:'Daily catchup',at:'meet'},
+           {t:[690,710],n:'Break',        at:'tea'},
+           {t:[780,840],n:'Lunch',        at:'lunch'},
+           {t:[960,982],n:'Break',        at:'tea'}];
 /* Doors at 9:30, everyone gone by 7. Outside that the floor is genuinely empty — nobody is
    drawn at all, rather than a room full of people sitting still at midnight. */
 const OPEN=570, CLOSE=1140;
@@ -2312,7 +2337,7 @@ const shuffled=occ=>here().sort((x,y)=>h32(x,occ,daySeed,1)-h32(y,occ,daySeed,1)
 const cache=new Map();
 function rolesAt(k,build){
   const kk=k+':'+daySeed+':'+S.length;
-  if(!cache.has(kk)){if(cache.size>12)cache.clear();cache.set(kk,build())}
+  if(!cache.has(kk)){if(cache.size>24)cache.clear();cache.set(kk,build())}
   return cache.get(kk);
 }
 function phaseRoles(ph){
@@ -2423,6 +2448,36 @@ function patrollers(){
     return led.length?led:here();
   });
 }
+/* The leads' rounds are one thing; this is everybody else getting out from behind a desk.
+   One person every quarter of an hour walks the floor, and the rota runs through the whole
+   team before anyone repeats — then the next lap is shuffled again, so it is never the same
+   order twice. */
+const ROAMSLOT=15, ROAMFOR=4.5;
+/* Slots that land inside the catchup or the lunch hour never run, and a turn spent then would
+   be a turn lost — so the rota position counts only the slots that actually happen. */
+const ROAMPOS=(()=>{const out=[];let pos=0;
+  for(let i=0;OPEN+i*ROAMSLOT<CLOSE;i++){
+    const a=OPEN+i*ROAMSLOT;
+    out.push((phaseAt(a)||phaseAt(a+ROAMFOR))?-1:pos++);
+  }
+  return out;})();
+function roamerAt(m){
+  const list=here();
+  const idx=Math.floor((m-OPEN)/ROAMSLOT);
+  if(idx<0||idx>=ROAMPOS.length||!list.length)return null;
+  const pos=ROAMPOS[idx];
+  if(pos<0)return null;
+  const lap=Math.floor(pos/list.length);
+  const order=rolesAt('roam'+lap+'x'+list.length,()=>
+    list.slice().sort((a,b)=>h32(a,lap,daySeed,31)-h32(b,lap,daySeed,31)||a-b));
+  return order[pos%list.length];
+}
+function roamWant(s,m){
+  if(roamerAt(m)!==s.i)return null;
+  const idx=Math.floor((m-OPEN)/ROAMSLOT), t0=OPEN+idx*ROAMSLOT;
+  if(m>=t0+ROAMFOR)return null;
+  return 'roam#'+Math.floor((m-t0)/0.5);
+}
 function patrolWant(s,m){
   const list=patrollers();
   if(!list.length)return null;
@@ -2432,15 +2487,16 @@ function patrolWant(s,m){
   if(m>=t0+PATROLFOR)return null;
   if(list[round%list.length]!==s.i)return null;
   /* a new waypoint every half minute keeps them moving rather than posted in one corner */
-  const k=Math.floor((m-t0)/PATROLSTEP);
-  return 'huddle'+((round*5+k)%HUDDLES.length)+'#0';
+  return 'rounds#'+(round*5+Math.floor((m-t0)/PATROLSTEP));
 }
 const due=(r,m)=>r&&m>=r.start&&m<=r.end?r.want:null;
 function wantOf(s,m){
   if(s.ooo||closed(m))return null;
   const ph=phaseAt(m);
   if(ph)return due(phaseRoles(ph)[s.i],m)||'desk';
-  return patrolWant(s,m)||due(breakRoles(m)[s.i],m)||due(blockRoles(m)[s.i],m)||'desk';
+  /* roam first: a lead who comes up on the roam rota should take that turn rather than have
+     their rounds swallow it, which quietly cost them their place in the rota */
+  return roamWant(s,m)||patrolWant(s,m)||due(breakRoles(m)[s.i],m)||due(blockRoles(m)[s.i],m)||'desk';
 }
 function anchorFor(s,want){
   if(want==='desk')return s.seat;
@@ -2448,6 +2504,9 @@ function anchorFor(s,want){
   if(name==='meet')return MEET[k%MEET.length];
   if(name==='sofa')return SOFA[k%SOFA.length];
   if(name.startsWith('huddle')){const h=HUDDLES[+name.slice(6)];return h[k%h.length]}
+  /* the two walking routes step through the open-floor spots rather than sitting anywhere */
+  if(name==='rounds')return HUDDLES[k%HUDDLES.length][0];
+  if(name==='roam')  return HUDDLES[(k*3+1)%HUDDLES.length][1%HUDDLES[0].length];
   const d=DEST[name];
   if(!d)return null;
   return d.spots&&d.spots.length?d.spots[k%d.spots.length]:d;
@@ -2525,50 +2584,16 @@ function build(){
 }
 
 /* ---------- the badge, ported from the design file ---------- */
-function mix(hex,amt){
-  const n=parseInt(hex.slice(1),16);
-  const c=[(n>>16)&255,(n>>8)&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(v*(1+amt)))));
-  return'rgb('+c.join(',')+')';
-}
-const SKIN=['#f6d3ae','#f0c191','#d29b6b','#a9744a'], HAIR=['#221c17','#3b2a1e','#6b4426','#c26a3a'],
-      SHIRT=['#33323a','#3b4152','#4d5a6b','#6b7a52','#2b2f38','#4a3d3a','#7a6a52','#b8434a'];
-function look(p){
-  const h=hstr(p.id||p.name);
-  /* >>> not >>: the hash fills 32 bits, and a signed shift turns the top half negative,
-     which indexes off the end of these palettes and hands mix() an undefined colour */
-  return{skin:SKIN[h%SKIN.length],hair:HAIR[(h>>>3)%HAIR.length],shirt:SHIRT[(h>>>6)%SHIRT.length],
-    accent:PAL[(h>>>9)%PAL.length],cut:['short','short','short','bob','long'][(h>>>12)%5],
-    tie:((h>>>15)&1)===1,beard:((h>>>16)&3)===0,glasses:((h>>>18)&3)===0};
-}
+/* The badge used to draw its own face from a hash of the person, which meant a man could be
+   handed a bob or long hair — there is exactly one female character in the art (Tanya) and the
+   cards were inventing more. It crops the head straight out of the sprite sheet now, so the
+   card is always the person standing at that desk. */
 function portrait(p){
-  const k=look(p), shade=mix(k.skin,-.16), brow=mix(k.hair,-.1);
-  const sideH=k.cut==='long'?34:k.cut==='bob'?22:9, b=[];
-  const d=css=>b.push('<i style="'+css+'"></i>');
-  d(`left:8px;top:80px;width:80px;height:32px;background:${k.shirt}`);
-  d(`left:8px;top:107px;width:80px;height:5px;background:rgba(0,0,0,.18)`);
-  d(`left:30px;top:80px;width:36px;height:16px;background:#f2efe4`);
-  d(`left:38px;top:66px;width:20px;height:16px;background:${shade}`);
-  if(k.tie){d(`left:43px;top:82px;width:10px;height:30px;background:${k.accent}`);
-            d(`left:41px;top:80px;width:14px;height:6px;background:${k.accent}`)}
-  d(`left:20px;top:46px;width:7px;height:13px;background:${shade}`);
-  d(`left:69px;top:46px;width:7px;height:13px;background:${shade}`);
-  d(`left:26px;top:24px;width:44px;height:47px;background:${k.skin}`);
-  d(`left:22px;top:17px;width:52px;height:17px;background:${k.hair}`);
-  d(`left:26px;top:30px;width:44px;height:7px;background:${k.hair}`);
-  d(`left:22px;top:30px;width:8px;height:${sideH}px;background:${k.hair}`);
-  d(`left:66px;top:30px;width:8px;height:${sideH}px;background:${k.hair}`);
-  d(`left:33px;top:42px;width:11px;height:3px;background:${brow}`);
-  d(`left:52px;top:42px;width:11px;height:3px;background:${brow}`);
-  d(`left:34px;top:48px;width:6px;height:7px;background:#332f2b`);
-  d(`left:56px;top:48px;width:6px;height:7px;background:#332f2b`);
-  d(`left:46px;top:55px;width:4px;height:6px;background:${shade}`);
-  d(`left:41px;top:63px;width:14px;height:3px;background:#a35b52`);
-  if(k.beard){d(`left:30px;top:58px;width:36px;height:13px;background:${k.hair}`);
-              d(`left:41px;top:61px;width:14px;height:4px;background:#a35b52`)}
-  if(k.glasses){d(`left:29px;top:45px;width:17px;height:14px;border:3px solid #332f2b`);
-                d(`left:51px;top:45px;width:17px;height:14px;border:3px solid #332f2b`);
-                d(`left:46px;top:50px;width:5px;height:3px;background:#332f2b`)}
-  return'<div class="ofc-pt">'+b.join('')+'</div>';
+  /* crop head-and-shoulders out of the standing-front cell (column 0, row 4) */
+  const k=0.77, x=21.1, y=4*192+4;
+  return `<i class="ofc-pph" style="background-image:url(${ART}c${pad(spriteOf(p))}.png);
+    background-size:${(128*4*k).toFixed(1)}px ${(192*6*k).toFixed(1)}px;
+    background-position:${(-x*k).toFixed(1)}px ${(-y*k).toFixed(1)}px"></i>`;
 }
 
 /* ---------- editing from the card ---------- */
@@ -2612,7 +2637,7 @@ function charSheet(pid){
 /* ---------- the loop ----------
    The clock is the real one. A test button parks it inside one part of the day instead, so you
    can see the standup or the lunch hour without waiting for it; 'Now' hands it back. */
-let raf=null, last=0, els=[], screens=[], chairs=[], board=null, hh=null, mm=null, clk=null, ph=null;
+let raf=null, last=0, els=[], screens=[], chairs=[], board=null, hh=null, mm=null, clk=null;
 let hold=null, simM=0, wasShut=null;
 const nowMin=()=>{const t=new Date();return t.getHours()*60+t.getMinutes()+t.getSeconds()/60};
 function findChat(){
@@ -2643,7 +2668,6 @@ function frame(now){
     const p2=v=>String(v).padStart(2,'0');
     const hr=Math.floor(m/60)%24, mn=Math.floor(m%60);
     clk.textContent=p2(hr)+':'+p2(mn);
-    ph.textContent=(p?p.n:(m<OPEN||m>=CLOSE?'After hours':'At their desks'))+(hold?' · test':'');
     hh.style.transform='translate(-50%,-100%) rotate('+((hr%12)*30+mn*0.5)+'deg)';
     mm.style.transform='translate(-50%,-100%) rotate('+(mn*6+(m*60%60)*0.1)+'deg)';
     board.style.setProperty('--wd',Math.max(.28,Math.min(.9,STRIDE/walkPx())).toFixed(3)+'s');
@@ -2771,25 +2795,29 @@ function mount(){
   <div class="glass card ofc-wrap">
     <div class="ofc-bar">
       <span class="ofc-clock" id="ofcclk">--:--</span>
-      <span class="ofc-phase" id="ofcph"></span>
       <span class="ofc-jump" id="ofcjump">
         <button class="ofc-jb on" data-now="1">Now</button>
         ${JUMPS.map(j=>`<button class="ofc-jb" data-lo="${j.lo}" data-hi="${j.hi}"
           title="Jump to ${j.n}">${j.n}</button>`).join('')}
-        <button class="ofc-jb" data-find="chat">Talking</button>
+        <button class="ofc-jb" data-find="chat">Chats</button>
       </span>
       <div class="sp"></div>
       <button class="ofc-light" id="ofclight" aria-pressed="false"
         title="Turn the office lights on or off"><i></i><b></b></button>
       <span class="sub" id="ofccount">${headHTML()}</span>
     </div>
-    <div class="ofc-board" id="ofcboard" style="background-image:var(--plate)">
-      <div class="ofc-wc"><i class="hh"></i><i class="mm"></i></div>
+    <div class="ofc-view" id="ofcview">
+      <div class="ofc-board" id="ofcboard" style="background-image:var(--plate)">
+        <div class="ofc-wc"><i class="hh"></i><i class="mm"></i></div>
+      </div>
     </div>
   </div>
   <div class="ofc-rail">${railHTML()}</div>`;
 
-  board=$('#ofcboard'); clk=$('#ofcclk'); ph=$('#ofcph');
+  board=$('#ofcboard'); clk=$('#ofcclk');
+  /* wider than the screen on a phone, so start it looking at the desks, not the left wall */
+  const vw=$('#ofcview');
+  if(vw)requestAnimationFrame(()=>{vw.scrollLeft=(vw.scrollWidth-vw.clientWidth)*0.42});
   hh=$('.ofc-wc .hh'); mm=$('.ofc-wc .mm');
   const layer=document.createElement('div');
   layer.style.cssText='position:absolute;inset:0';
@@ -3555,7 +3583,10 @@ document.addEventListener('pointermove',ev=>{
   const {s:S,e:E}=planRange(), N=D.diff(S,E)+1;
   const i=Math.max(0,Math.min(N-1,Math.floor((ev.clientX-r.left)/(r.width/N))));
   const d=D.add(S,i);
-  if(d!==DRAG.e){DRAG.e=d;render()}
+  /* A press that never travelled is somebody tapping the row, or starting to scroll — not
+     somebody booking a week. Only a real drag arms the booking. */
+  if(DRAG.x!=null&&Math.abs(ev.clientX-DRAG.x)>24)DRAG.moved=true;
+  if(d!==DRAG.e){DRAG.e=d;DRAG.moved=true;render()}
 });
 document.addEventListener('pointercancel',()=>{if(DRAG){DRAG=null;render()}});
 document.addEventListener('pointerup',ev=>{
@@ -3580,6 +3611,7 @@ document.addEventListener('pointerup',ev=>{
     save();render();return;
   }
   DRAG=null;
+  if(!d.moved)return render();          // a tap books nobody
   const s=d.s<d.e?d.s:d.e, e=d.s<d.e?d.e:d.s;
   render();
   pickProject(d.x,d.y,null,v=>{if(v)addBooking(d.pid,s,e,v);save();render()});
