@@ -56,7 +56,7 @@
   color-scheme:light;
   --bg:#E9E9EF; --glass:rgba(255,255,255,.86);
   --stroke:rgba(255,255,255,.9); --spec:rgba(255,255,255,1); --hair:#DED5BF;
-  --txt:#22201E; --txt2:rgba(34,32,30,.72); --txt3:rgba(34,32,30,.5);
+  --txt:#171512; --txt2:rgba(23,21,18,.88); --txt3:rgba(23,21,18,.66);
   --fill:#F3ECDC; --fill2:#EAE1CC; --field:#FFFDF7;
   --optbg:#FFFFFF;
   --shadow:0 12px 40px rgba(60,60,90,.16);
@@ -230,9 +230,11 @@ td.n,th.n{text-align:right;white-space:nowrap}
 .st.ooo{background:rgba(191,90,242,.16);color:var(--purple)}
 .st.unassigned{background:rgba(255,159,10,.16);color:var(--saffron)}
 .st.notcall{background:rgba(94,92,230,.2);color:#9B99F5}
-.av{width:28px;height:28px;border-radius:4px;flex:0 0 auto;display:grid;place-items:center;
-  font-size:11px;font-weight:700;color:#fff;letter-spacing:-.02em;
-  border:1.5px solid var(--edge);font-family:var(--mono)}
+/* the ID badge frames a portrait in ink on paper; an initial gets the same frame rather
+   than one of ten fill colours, which is what made the name column read as confetti */
+.av{width:28px;height:28px;border-radius:var(--rp2);flex:0 0 auto;display:grid;place-items:center;
+  font-size:11px;font-weight:700;letter-spacing:.02em;font-family:var(--mono);
+  background:var(--paper2);color:var(--txt2);border:1.5px solid var(--edge)}
 .nm{display:flex;align-items:center;gap:9px;flex-wrap:nowrap}
 /* stacked cards on phones */
 @media(max-width:720px){
@@ -540,6 +542,12 @@ td.n,th.n{text-align:right;white-space:nowrap}
 .ofc-pt i{position:absolute;display:block}
 .ofc-bname{padding:6px 5px 2px;font:700 11px/1.15 var(--sans);color:#22201e;text-align:center;
   cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ofc-bpr{padding:1px 6px 3px;font:700 7px/1.25 ui-monospace,Menlo,Consolas,monospace;
+  letter-spacing:.05em;text-transform:uppercase;color:#6f6555;text-align:center;
+  display:flex;align-items:center;justify-content:center;gap:3px;cursor:pointer;
+  white-space:nowrap;overflow:hidden}
+.ofc-bpr i{width:5px;height:5px;border-radius:50%;flex:0 0 auto;border:1px solid rgba(34,32,30,.45)}
+.ofc-bpr.none{color:#b3a992}
 .ofc-bst{margin:2px 6px 7px;padding:4px 0;width:calc(100% - 12px);border:0;background:none;
   border-top:2px dashed #d8cfb6;display:flex;align-items:center;justify-content:center;gap:5px;
   cursor:pointer;font-family:var(--sans)}
@@ -2051,7 +2059,6 @@ const STSHORT={planned:'planned',progress:'progress',blocked:'blocked',done:'don
   ooo:'OOO',unassigned:'not assigned',notcall:'not in call'};
 const avOf=p=>p.avail||(nextFree(p.id)<=D.today()?'free':'busy');
 const sortedPeople=()=>[...DB.people].sort((a,b)=>a.name.localeCompare(b.name));
-const hue=id=>PAL[[...String(id)].reduce((s,c)=>s+c.charCodeAt(0),0)%PAL.length];
 
 /* ==================== capacity math ==================== */
 function merged(pid){
@@ -2077,40 +2084,25 @@ const loadOn=(pid,d)=>DB.allocs.filter(a=>a.personId===pid&&a.start<=d&&a.end>=d
 function isOver(pid){const t=D.today();for(let i=0;i<90;i++)if(loadOn(pid,D.add(t,i))>100)return true;return false}
 
 /* ==================== wallpaper ==================== */
-const WALLS=['Masala','Mint','Plain'];let wall=0,raf=null,drawFn=null;
+/* One wallpaper, and it does not move. The panels are opaque paper now, so all a mesh ever
+   showed was a drifting glow in the margins — three of them to choose between was a setting
+   that earned nothing, and the canvas kept a rAF loop alive for it. */
+let drawFn=null;
 function bgInit(){
   const c=$('#bg'),x=c.getContext('2d');
-  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
-  let W,H,t=0;
-  const SETS=[
-    [['255,159,10',.62,.24,.26,.00019,.00014],['255,69,58',.5,.78,.2,-.00016,.00021],
-     ['191,90,242',.55,.68,.78,.00013,-.00018],['255,214,10',.4,.16,.8,-.00021,.00012]],
-    [['48,209,88',.55,.22,.3,.00017,.00013],['64,200,224',.55,.8,.26,-.00015,.0002],
-     ['10,132,255',.5,.6,.82,.00012,-.00017],['94,92,230',.45,.2,.76,-.0002,.00011]],
-  ];
+  let W,H;
   const size=()=>{const r=Math.min(devicePixelRatio||1,2);W=c.width=innerWidth*r;H=c.height=innerHeight*r;
-    c.style.width=innerWidth+'px';c.style.height=innerHeight+'px'};
-  size();addEventListener('resize',size);
+    c.style.width=innerWidth+'px';c.style.height=innerHeight+'px';draw()};
   function draw(){
+    if(!W)return;
     const dark=THEME==='dark';
-    x.fillStyle=dark?'#08080C':'#E9E9EF';x.fillRect(0,0,W,H);
-    if(wall<2){
-      for(const[col,r,px,py,sx,sy] of SETS[wall]){
-        const cx=(px+Math.sin(t*sx)*.17)*W, cy=(py+Math.cos(t*sy)*.17)*H, rr=r*Math.max(W,H)*.72;
-        const g=x.createRadialGradient(cx,cy,0,cx,cy,rr);
-        g.addColorStop(0,`rgba(${col},${dark?.42:.3})`);g.addColorStop(1,`rgba(${col},0)`);
-        x.fillStyle=g;x.beginPath();x.arc(cx,cy,rr,0,7);x.fill();
-      }
-    }
+    x.fillStyle=dark?'#08080C':'#E4DFD2';x.fillRect(0,0,W,H);
     const v=x.createRadialGradient(W/2,H*.4,0,W/2,H*.4,Math.max(W,H)*.85);
-    v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,dark?'rgba(0,0,0,.62)':'rgba(255,255,255,.72)');
+    v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,dark?'rgba(0,0,0,.5)':'rgba(90,78,54,.14)');
     x.fillStyle=v;x.fillRect(0,0,W,H);
   }
   drawFn=draw;
-  function loop(){t+=16;draw();raf=requestAnimationFrame(loop)}
-  draw(); if(!reduce)loop();
-  window.cycleWall=()=>{wall=(wall+1)%3;draw();toast('Wallpaper: '+WALLS[wall]);
-    if(wall===2&&raf){cancelAnimationFrame(raf);raf=null}else if(!raf&&!reduce)loop()};
+  size();addEventListener('resize',size);
 }
 function toggleTheme(){THEME=THEME==='dark'?'light':'dark';
   document.documentElement.dataset.t=THEME;
@@ -2135,7 +2127,7 @@ function buildNav(){
 }
 function ticker(){
   const el=$('#me');
-  if(el)el.innerHTML=DB.user?`<span class="av" style="background:var(--blue)">${initials(DB.user)}</span>
+  if(el)el.innerHTML=DB.user?`<span class="av">${initials(DB.user)}</span>
     <span class="uname">${esc(DB.user)}</span>`:'';
 }
 function render(){
@@ -2245,11 +2237,15 @@ function smooth(cells){
 }
 
 /* ---------- the day ---------- */
-const DAY=[{t:[570,585],n:'Standup',at:'meet'},
-           {t:[660,682],n:'Tea',    at:'tea'},
+const DAY=[{t:[600,630],n:'Standup',at:'meet'},
+           {t:[690,710],n:'Tea',    at:'tea'},
            {t:[780,840],n:'Lunch',  at:'lunch'},
            {t:[960,982],n:'Tea',    at:'tea'}];
-const OPEN=540, CLOSE=1140;
+/* Doors at 9:30, everyone gone by 7. Outside that the floor is genuinely empty — nobody is
+   drawn at all, rather than a room full of people sitting still at midnight. */
+const OPEN=570, CLOSE=1140;
+const DARKAT=1020;                           // 5pm: the lights go off on their own
+const closed=m=>m<OPEN||m>=CLOSE;
 const LUNCHAT=6, LUNCHMIN=10, LUNCHMAX=15;   // how many eat at once, and for how long
 const phaseAt=m=>DAY.find(d=>m>=d.t[0]&&m<d.t[1])||null;
 
@@ -2269,7 +2265,6 @@ const hstr=s=>{let h=2166136261>>>0;
 /* Break time is not a wander: the pantry, the coffee counter, or the sofa. Nowhere else. */
 const TEAPLACES=['coffee','vending','pantryTable'];
 const LUNCHPLACES=['pantryTable','pantryCounter','coffee','sofa'];
-const BREAKPLACES=['coffee','sofa','pantryTable','vending','pantryCounter'];
 const CAP={sofa:SOFA.length};                        // the sofa seats three, and only three
 const capOf=n=>CAP[n]!==undefined?CAP[n]:(DEST[n]&&DEST[n].spots?DEST[n].spots.length:1);
 function dealer(names,limit){
@@ -2284,11 +2279,11 @@ const shuffled=occ=>here().sort((x,y)=>h32(x,occ,daySeed,1)-h32(y,occ,daySeed,1)
 
 /* Who is doing what, worked out once per occasion. Every place is dealt from one shuffle, so
    two people can never be sent to the same spot and a full sofa turns the next person away. */
-const cache={key:'',roles:null};
+const cache=new Map();
 function rolesAt(k,build){
   const kk=k+':'+daySeed+':'+S.length;
-  if(cache.key!==kk){cache.key=kk;cache.roles=build()}
-  return cache.roles;
+  if(!cache.has(kk)){if(cache.size>12)cache.clear();cache.set(kk,build())}
+  return cache.get(kk);
 }
 function phaseRoles(ph){
   const occ=Math.round(ph.t[0]);
@@ -2353,21 +2348,69 @@ function blockRoles(m){
       for(let q=0;q<size;q++)roles[order[k+q]]={start,end,want:'huddle'+spot+'#'+q};
       k+=size;
     }
-    const deal=dealer(BREAKPLACES,order.length);let d=0;
-    for(;k<order.length&&d<deal.length;k++){
-      const i=order[k];
-      if(h32(i,a,daySeed,5)>0.5)continue;
-      const start=a+6+h32(i,a,daySeed,6)*(len-16);
-      roles[i]={start,end:start+4+h32(i,a,daySeed,7)*8,want:deal[d++]};
+    return roles;
+  });
+}
+
+/* ---------- breaks: a rota, not a dice roll ----------
+   Every quarter of an hour one to three people get up and go and sit down in the pantry or
+   on the sofa. The order is one shuffle of the whole team for the day and the slots walk
+   through it, so everybody gets a turn before anybody gets a second one. */
+const BREAKSLOT=15, BREAKMIN=8, BREAKMAX=12;
+const BREAKAT=['pantryTable','sofa','pantryCounter'];
+const slot0=()=>Math.floor(OPEN/BREAKSLOT);
+const partySize=k=>1+Math.floor(h32(k,daySeed,7,21)*3);        // 1..3
+function breakRoles(m){
+  const slot=Math.floor(m/BREAKSLOT);
+  return rolesAt('br'+slot,()=>{
+    const roles={},order=shuffled(daySeed);
+    const idx=slot-slot0();
+    if(idx<0||!order.length)return roles;
+    let at=0;                                                   // where the rota has got to
+    for(let k=0;k<idx;k++)at+=partySize(slot0()+k);
+    const n=Math.min(partySize(slot),order.length);
+    const seats=dealer(BREAKAT,n);
+    for(let q=0;q<n;q++){
+      const i=order[(at+q)%order.length];
+      if(roles[i]!==undefined)continue;
+      const t0=slot*BREAKSLOT+0.5+h32(i,slot,daySeed,22)*1.5;
+      const dur=BREAKMIN+h32(i,slot,daySeed,23)*(BREAKMAX-BREAKMIN);
+      roles[i]={start:t0,end:Math.min(t0+dur,(slot+1)*BREAKSLOT-0.5),want:seats[q]};
     }
     return roles;
   });
 }
+
+/* ---------- the rounds ----------
+   One person at a time walks the floor to see how everyone is getting on. Who that is comes
+   from the board, never from a name: the manager desk, plus anyone given a lead role on
+   Team & Projects. With nobody marked as a lead the whole team takes it in turn instead. */
+const PATROLEVERY=20, PATROLFOR=8, PATROLSTEP=0.5;
+const isLead=p=>p.desk===0||/^LD/i.test(p.role||'');
+function patrollers(){
+  return rolesAt('pat',()=>{
+    const led=S.filter(s=>!s.ooo&&isLead(s.p)).map(s=>s.i);
+    return led.length?led:here();
+  });
+}
+function patrolWant(s,m){
+  const list=patrollers();
+  if(!list.length)return null;
+  const round=Math.floor((m-OPEN)/PATROLEVERY);
+  if(round<0)return null;
+  const t0=OPEN+round*PATROLEVERY;
+  if(m>=t0+PATROLFOR)return null;
+  if(list[round%list.length]!==s.i)return null;
+  /* a new waypoint every half minute keeps them moving rather than posted in one corner */
+  const k=Math.floor((m-t0)/PATROLSTEP);
+  return 'huddle'+((round*5+k)%HUDDLES.length)+'#0';
+}
+const due=(r,m)=>r&&m>=r.start&&m<=r.end?r.want:null;
 function wantOf(s,m){
-  if(s.ooo)return null;
+  if(s.ooo||closed(m))return null;
   const ph=phaseAt(m);
-  const r=(ph?phaseRoles(ph):blockRoles(m))[s.i];
-  return r&&m>=r.start&&m<=r.end?r.want:'desk';
+  if(ph)return due(phaseRoles(ph)[s.i],m)||'desk';
+  return patrolWant(s,m)||due(breakRoles(m)[s.i],m)||due(blockRoles(m)[s.i],m)||'desk';
 }
 function anchorFor(s,want){
   if(want==='desk')return s.seat;
@@ -2448,7 +2491,7 @@ function build(){
     return{i,p,seat,anchor:seat,ooo:away.has(p.id),spr:spriteOf(p),
       px:seat.x*IW,py:seat.y*IH,wp:null,wi:0,dir:seat.f||'front',want:'desk'};
   });
-  cache.key='';
+  cache.clear();
 }
 
 /* ---------- the badge, ported from the design file ---------- */
@@ -2540,7 +2583,8 @@ function charSheet(pid){
    The clock is the real one. A test button parks it inside one part of the day instead, so you
    can see the standup or the lunch hour without waiting for it; 'Now' hands it back. */
 let raf=null, last=0, els=[], screens=[], chairs=[], board=null, hh=null, mm=null, clk=null, ph=null;
-let hold=null, simM=0;
+let hold=null, simM=0, wasShut=null;
+const nowMin=()=>{const t=new Date();return t.getHours()*60+t.getMinutes()+t.getSeconds()/60};
 function findChat(){
   let best=null;
   for(let m=OPEN;m<CLOSE;m+=0.5){
@@ -2559,6 +2603,9 @@ function frame(now){
   let m=t.getHours()*60+t.getMinutes()+t.getSeconds()/60;
   if(hold){simM=Math.min(hold.hi,simM+dt*14/60);m=simM}
   const p=phaseAt(m);
+  const shut=closed(m);
+  clockLights(m);
+  if(shown&&wasShut!==shut){wasShut=shut;const c=$('#ofccount');if(c)c.textContent=headHTML(m)}
   /* On another tab the day carries on — people still walk to the standup, the clock still
      runs — but there is nothing on screen to write it to, so everything below the simulation
      is skipped until the tab comes back. */
@@ -2572,11 +2619,15 @@ function frame(now){
     board.style.setProperty('--wd',Math.max(.28,Math.min(.9,STRIDE/walkPx())).toFixed(3)+'s');
   }
   S.forEach((s,k)=>{
-    retarget(s,m);
-    const moving=advance(s,dt);
+    if(shut){
+      /* nobody is here, and they start tomorrow at their own desk rather than wherever
+         the evening happened to leave them standing */
+      s.want=null;s.wp=null;s.anchor=s.seat;s.px=s.seat.x*IW;s.py=s.seat.y*IH;
+    }else retarget(s,m);
+    const moving=shut?false:advance(s,dt);
     const el=els[k];if(!el||!shown)return;
     const scr=screens[k];
-    if(s.ooo){el.style.display='none';if(scr)scr.style.display='none';return}
+    if(s.ooo||shut){el.style.display='none';if(scr)scr.style.display='none';return}
     el.style.display='';
     el.style.left=(s.px/IW*100)+'%';el.style.top=(s.py/IH*100)+'%';
     /* which cell of the sheet: walking rows are per direction, then standing, then sitting */
@@ -2614,8 +2665,12 @@ let mounted=false, cast='', shown=false;
    wants to look at the room, not a fact about the team, and a shared board would mean a commit
    to the repo every time anybody flicked the switch. */
 const LIGHTKEY='devsamosa:lights';
-let LIT=true;
-try{LIT=localStorage.getItem(LIGHTKEY)!=='off'}catch(e){}
+/* The lights follow the clock — on while the office is open, off from 5pm. The button is an
+   override rather than a setting: it lasts until the clock next crosses that line, so nobody
+   comes back to a room left lit at midnight because it was flipped on last Tuesday. */
+let LIT=true, litMode='auto', lastAuto=null;
+try{const v=localStorage.getItem(LIGHTKEY); if(v==='on'||v==='off')litMode=v}catch(e){}
+const autoLit=m=>!closed(m)&&m<DARKAT;
 function applyLights(){
   if(!board)return;
   board.style.setProperty('--plate',`url(${ART}${LIT?'office.webp':'office-dark.webp'})`);
@@ -2624,9 +2679,24 @@ function applyLights(){
   if(b){b.classList.toggle('on',LIT); b.setAttribute('aria-pressed',String(!LIT));
         b.querySelector('b').textContent=LIT?'Lights on':'Lights off';}
 }
-function setLights(on){
-  LIT=on; try{localStorage.setItem(LIGHTKEY,on?'on':'off')}catch(e){}
+function setLights(on,auto){
+  LIT=on;
+  if(!auto){litMode=on?'on':'off';try{localStorage.setItem(LIGHTKEY,litMode)}catch(e){}}
   applyLights();
+}
+function clockLights(m){
+  const want=autoLit(m);
+  if(lastAuto===null)lastAuto=want;
+  if(want!==lastAuto){                       // 5pm came round: whatever was forced expires
+    lastAuto=want; litMode='auto';
+    try{localStorage.removeItem(LIGHTKEY)}catch(e){}
+  }
+  if(litMode==='auto'&&LIT!==want)setLights(want,true);
+}
+/* what they are on today, straight off the board — the same row Today is typing into */
+function projOf(pid){
+  const r=DB.updates.find(u=>u.date===D.today()&&u.personId===pid);
+  return (r&&DB.projects.find(x=>x.id===r.projectId))||null;
 }
 const castOf=()=>DB.people.map(p=>p.id+':'+(p.sprite==null?'':p.sprite)
                                   +':'+(p.desk===0?'m':'')).join('|');
@@ -2637,11 +2707,16 @@ function railHTML(){
       <button class="ofc-face" data-act="char" title="Change character">
         <div class="ofc-frame">${portrait(s.p)}</div></button>
       <div class="ofc-bname" data-act="open" title="Open in Today">${esc(s.p.name)}</div>
+      ${(()=>{const pr=projOf(s.p.id);
+        return `<div class="ofc-bpr${pr?'':' none'}" data-act="open" title="${pr?esc(pr.name):'No project yet'}">
+          ${pr?`<i style="background:${pr.color}"></i>${esc(pr.name)}`:'—'}</div>`;})()}
       <button class="ofc-bst" data-act="status" aria-pressed="${s.ooo}"
         title="Tap to mark ${s.ooo?'back in':'out of office'}"><i></i><b>${s.ooo?'OOO':'WORKING'}</b></button>
     </div>`).join('');
 }
-function headHTML(){
+function headHTML(m){
+  if(m===undefined)m=nowMin();
+  if(closed(m))return 'Office closed';
   const n=S.filter(s=>!s.ooo).length, out=S.length-n;
   return `${n} in the office${out?` · ${out} out`:''}`;
 }
@@ -2749,7 +2824,7 @@ function goToPerson(pid){
   const f=$$(`#main tr[data-p="${pid}"] .c-tk`)[0];
   if(f){f.scrollIntoView({block:'center',behavior:'smooth'});setTimeout(()=>f.focus(),260)}
 }
-return{show,stop,visible,build,wantOf,anchorFor,state:()=>S,setSeed:v=>{daySeed=v;cache.key=''},
+return{show,stop,visible,build,wantOf,anchorFor,state:()=>S,setSeed:v=>{daySeed=v;cache.clear()},
        lights:on=>setLights(on),lit:()=>LIT,
        phaseAt,DAY,bfs};   // bfs is out here so a harness can check the route spread
 })();
@@ -2833,7 +2908,7 @@ function vHistory(){
       <thead><tr><th style="width:180px">Developer</th><th>Task</th>
         <th style="width:150px">Project</th><th style="width:130px">Status</th></tr></thead>
       <tbody>${rows.map(r=>`<tr>
-        <td data-l="Developer"><div class="nm"><span class="av" style="background:${hue(r.personId)}">${initials(pname(r.personId))}</span>${esc(pname(r.personId))}</div></td>
+        <td data-l="Developer"><div class="nm"><span class="av">${initials(pname(r.personId))}</span>${esc(pname(r.personId))}</div></td>
         <td data-l="Task" class="full wrapcell">${esc(r.task).replace(/\n/g,'<br>')}</td>
         <td data-l="Project"><span class="pill" style="background:${prcolor(r.projectId)}22;color:${prcolor(r.projectId)}">
           <i class="dot" style="background:${prcolor(r.projectId)}"></i>${esc(prname(r.projectId))}</span></td>
@@ -2951,7 +3026,7 @@ function vToday(){
     const mine=rows.filter(r=>r.personId===p.id);
     return (mine.length?mine:[null]).map((r,i)=>`<tr class="${r&&r.task?'':'ghost'}" data-p="${p.id}" data-id="${r?r.id:''}">
       <td data-l="Developer" class="pcell">${i?'<span class="cont">↳</span>':
-        `<div class="nm"><span class="av" style="background:${hue(p.id)}">${initials(p.name)}</span>
+        `<div class="nm"><span class="av">${initials(p.name)}</span>
           <span class="who">${esc(p.name)}</span>
           <button class="i rmdev" title="Remove ${esc(p.name)} from the team">✕</button></div>`}</td>
       <td data-l="Task" class="full tcell"><textarea class="c-tk" rows="1"
@@ -3281,7 +3356,7 @@ function personForm(){
         <button class="b p" id="ok">Add</button></div>
       <div class="lbl" style="margin:20px 0 8px">On the board — tap to remove</div>
       <div class="chips">${inTeam.map(p=>`<button class="chip on rm" data-i="${p.id}">
-        <span class="av" style="background:${hue(p.id)};width:20px;height:20px;border-radius:6px;font-size:9px">${initials(p.name)}</span>
+        <span class="av" style="width:20px;height:20px;font-size:9px">${initials(p.name)}</span>
         ${esc(p.name)} <span class="x">✕</span></button>`).join('')}</div>
       <div class="row" style="margin-top:20px"><button class="b" id="cx">Done</button></div>
     </div>`,()=>$('#nn').focus());
@@ -3595,7 +3670,6 @@ function buildMenu(){
       :STORE.mode==='cloud'?item('cloudout','Sign out of team board',CLOUD.email)
       :item('ghin','Use a shared team board'))+sep;
   html+=item('theme','Appearance',THEME==='dark'?'Dark':'Light')
-     +item('wall','Wallpaper',WALLS[wall])
      +item('crit','Critters',CRITTERS?'On':'Off')
      +item('sync','Reload data')+sep;
   html+=item('wipe','Clear all updates')+item('out','Sign out');
@@ -3612,7 +3686,6 @@ function buildMenu(){
     else if(a==='pw')passForm();
     else if(a==='sec')secretForm();
     else if(a==='theme')toggleTheme();
-    else if(a==='wall')cycleWall();
     else if(a==='crit'){CRITTERS=!CRITTERS;toast('Critters '+(CRITTERS?'on':'off'));
       document.documentElement.classList.toggle('nocrit',!CRITTERS);
       if(!CRITTERS)$$('.critter').forEach(c=>c.remove())}
@@ -3820,7 +3893,7 @@ function vSetup(){
       <div class="sp"></div><button class="b p s" id="ap">+ Add person</button></div>
       <div class="scrollx"><table class="resp"><thead><tr><th>Name</th><th style="width:150px">Role</th><th style="width:150px">Availability</th><th></th></tr></thead>
       <tbody>${sortedPeople().map(p=>`<tr data-id="${p.id}">
-        <td data-l="Name"><div class="nm"><span class="av" style="background:${hue(p.id)}">${initials(p.name)}</span>${esc(p.name)}${p.id===ME?' <span class="sub">(you)</span>':''}</div></td>
+        <td data-l="Name"><div class="nm"><span class="av">${initials(p.name)}</span>${esc(p.name)}${p.id===ME?' <span class="sub">(you)</span>':''}</div></td>
         <td data-l="Role"><select class="c-role">${ROLES.map(r=>`<option ${p.role===r?'selected':''}>${r}</option>`).join('')}</select></td>
         <td data-l="Availability"><select class="c-av av-${avOf(p)}">
           <option value="free" ${avOf(p)==='free'?'selected':''}>Free now</option>
