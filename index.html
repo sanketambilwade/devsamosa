@@ -419,6 +419,79 @@ td.n,th.n{text-align:right;white-space:nowrap}
 .pki:hover{background:var(--fill)}
 .pki.del{color:var(--red)}
 
+/* ---- office ---- */
+.ofc-wrap{padding:10px}
+.ofc-bar{display:flex;align-items:center;gap:10px;padding:2px 4px 10px}
+.ofc-clock{font:700 22px/1 ui-monospace,Menlo,Consolas,monospace;color:var(--saffron);
+  font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.ofc-phase{font:600 11px/1 var(--sans);letter-spacing:.5px;color:var(--txt2);
+  background:var(--fill);padding:6px 9px;border-radius:8px}
+/* keep the whole floor in view with a strip of cards under it, rather than filling the
+   screen and pushing them below the fold */
+.ofc-board{position:relative;width:min(100%,calc(58vh * 1.5));margin:0 auto;
+  aspect-ratio:1536/1024;border-radius:var(--r2);
+  overflow:hidden;background-size:cover;background-position:center;image-rendering:pixelated;
+  box-shadow:inset 0 0 0 1px var(--hair)}
+.ofc-p{position:absolute;width:3.39%;aspect-ratio:128/192;transform:translate(-50%,-96%);cursor:pointer}
+.ofc-spr{position:absolute;inset:0;background-repeat:no-repeat;image-rendering:pixelated;
+  background-image:var(--idle);background-size:100% 100%;
+  transform:scaleX(var(--fx,1));transform-origin:50% 100%}
+/* the sheet is four frames wide; --wd comes from the walking speed so the feet don't skate */
+.ofc-p.walk .ofc-spr{background-image:var(--walk);background-size:400% 100%;
+  animation:ofcwalk var(--wd,.58s) steps(4) infinite}
+@keyframes ofcwalk{from{background-position-x:0%}to{background-position-x:133.3333%}}
+.ofc-tag{position:absolute;left:50%;top:97%;transform:translateX(-50%);white-space:nowrap;
+  font:600 8px/1 var(--sans);color:#fff;background:rgba(16,20,18,.82);padding:2px 4px;
+  border-radius:3px;pointer-events:none}
+/* lines of work on a monitor, only while its owner is sitting there. No percentage padding
+   here: a padding percentage resolves against the board, not this 28px box. */
+.ofc-scr{position:absolute;z-index:1;pointer-events:none;overflow:hidden;display:flex;
+  flex-direction:column;justify-content:center;gap:8%}
+.ofc-scr i{display:block;height:12%;width:40%;margin-left:13%;border-radius:1px;
+  background:#5fe39b;opacity:.85;animation:ofctype 2.4s steps(5) infinite}
+.ofc-scr i:nth-child(2){background:#8ecdff;animation-duration:3.1s}
+.ofc-scr i:nth-child(3){background:#f2c94c;animation-duration:2.7s}
+.ofc-scr i:nth-child(4){background:#ff9fb2;animation-duration:3.7s}
+@keyframes ofctype{0%{width:22%}25%{width:68%}50%{width:40%}75%{width:82%}100%{width:22%}}
+/* the clock painted on the office wall; its baked-in hands are cleared in the artwork */
+.ofc-wc{position:absolute;left:4.30%;top:7.76%;width:1.43%;aspect-ratio:1;
+  transform:translate(-50%,-50%);z-index:1;pointer-events:none}
+.ofc-wc i{position:absolute;left:50%;top:50%;display:block;background:#221f1c;transform-origin:50% 100%}
+.ofc-wc .hh{width:9%;height:27%}
+.ofc-wc .mm{width:6%;height:40%}
+.ofc-wc:after{content:'';position:absolute;left:50%;top:50%;width:13%;height:13%;
+  background:#221f1c;border-radius:50%;transform:translate(-50%,-50%)}
+
+.ofc-rail{display:flex;gap:14px;overflow-x:auto;padding:14px 2px 6px;scroll-snap-type:x proximity}
+.ofc-badge{position:relative;flex:0 0 168px;width:168px;background:#fdfaf0;border:3px solid #22201e;
+  border-radius:6px;box-shadow:4px 4px 0 rgba(20,18,16,.28);scroll-snap-align:start;cursor:pointer;
+  text-align:left;padding:0;font-family:var(--sans);display:block}
+.ofc-badge:active{transform:scale(.97)}
+.ofc-bhd{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:5px 7px;
+  border-bottom:3px solid #22201e;background:var(--saffron)}
+.ofc-bhd span{font:700 8px/1 var(--sans);letter-spacing:1.4px;color:#3a2f14}
+.ofc-bmid{display:flex;flex-direction:column;align-items:center;padding:11px 10px 4px}
+.ofc-frame{border:3px solid #22201e;line-height:0}
+.ofc-pt{position:relative;width:96px;height:112px;overflow:hidden;background:#efe6d2}
+.ofc-pt i{position:absolute;display:block}
+.ofc-bname{margin-top:9px;font:700 14px/1.15 var(--sans);color:#22201e;text-align:center}
+.ofc-brole{margin-top:4px;font:400 10px/1.2 var(--sans);color:#3f6fb2;text-align:center}
+.ofc-bst{display:flex;align-items:center;justify-content:center;gap:6px;margin:9px 10px 0;
+  padding:6px 0;border-top:2px dashed #d8cfb6;border-bottom:2px dashed #d8cfb6}
+.ofc-bst i{width:7px;height:7px;border-radius:50%;display:block}
+.ofc-bst b{font:700 9.5px/1 var(--sans);letter-spacing:.4px}
+.ofc-bft{padding:8px 10px}
+.ofc-code{height:16px;background-image:repeating-linear-gradient(90deg,#22201e 0 2px,transparent 2px 5px,#22201e 5px 6px,transparent 6px 9px,#22201e 9px 12px,transparent 12px 14px)}
+@media(max-width:720px){
+  .ofc-badge{flex-basis:146px;width:146px}
+  .ofc-clock{font-size:19px}
+  /* at phone size a sprite is about 12px wide and its name tag is three times that, so the
+     labels bury the room. The cards underneath carry the names; tap a desk for one person. */
+  .ofc-tag{display:none}
+}
+/* Critters off in the ••• menu stops the office moving too */
+.nocrit .ofc-p .ofc-spr,.nocrit .ofc-scr i{animation:none!important}
+
 /* ---- critters ---- */
 .critter{color:var(--saffron);pointer-events:none}
 .critter svg{width:100%;height:100%;display:block}
@@ -781,6 +854,13 @@ header{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
 @keyframes sp{to{transform:rotate(360deg)}}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* The office is the content, not decoration: people still have to be seen walking when the OS
+   asks for reduced motion. Windows with "show animations" off reports it, and answering that by
+   freezing them reads as teleporting. Critters in the ••• menu is the switch for this instead. */
+@media (prefers-reduced-motion:reduce){
+  .ofc-p.walk .ofc-spr{animation:ofcwalk var(--wd,.58s) steps(4) infinite!important}
+  .ofc-scr i{animation:ofctype 2.4s steps(5) infinite!important}
+}
 @media print{#bg,nav,.hbtns,.ticker,button{display:none!important}
   body{background:#fff;color:#000}.glass{background:#fff;border:1px solid #ddd;box-shadow:none;break-inside:avoid}
   #app{padding:var(--safe-t) var(--safe-r) 0 var(--safe-l);max-width:none}}
@@ -813,7 +893,7 @@ header{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
 const KEY='devsamosa:v1', OLD='teampulse:v1', SESS='devsamosa:session';
 const SHARED=true, SESSION_HOURS=12;
 let DB={v:2,authV:0,dataV:0,user:'',pass:'',recovery:'',roster:[],people:[],projects:[],updates:[],allocs:[]};
-let ME=null, ADMIN=false, view='today', THEME='dark';
+let ME=null, ADMIN=false, view='office', THEME='dark';
 const PAL=['#0A84FF','#FF9F0A','#BF5AF2','#30D158','#FF375F','#40C8E0','#FF6B35','#5E5CE6','#FFD60A','#64D2FF'];
 
 const $=(s,r=document)=>r.querySelector(s);
@@ -1949,6 +2029,7 @@ function toggleTheme(){THEME=THEME==='dark'?'light':'dark';
 
 /* ==================== shell ==================== */
 const VIEWS=[
+  ['office','Office','M3 21h18M5 21V7l7-4 7 4v14M9 21v-5h6v5M9 11h.01M12 11h.01M15 11h.01'],
   ['today','Today','M8 2v3M16 2v3M3 9h18M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z'],
   ['plan','Plan','M4 6h9M4 12h14M4 18h6'],
   ['setup','Team & Projects','M17 20v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9.5 6.5a3.5 3.5 0 11-7 0 3.5 3.5 0 017 0M22 20v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75'],
@@ -1970,9 +2051,409 @@ function ticker(){
 function render(){
   ticker();
   $$('#segnav button,#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===view));
-  ({today:vToday,plan:vPlan,reports:vReports,setup:vSetup})[view]();
+  if(view!=='office')OFFICE.stop();     // the floor keeps animating otherwise
+  ({office:OFFICE.show,today:vToday,plan:vPlan,reports:vReports,setup:vSetup})[view]();
   if(!ADMIN)lockdown();
 }
+
+/* ==================== view: office ====================
+   A live picture of the floor. The plate, the walk grid and every anchor on it are built by
+   art/plate5.py and art/grid6.py from the source artwork; positions below are image pixels of
+   the 1536x1024 plate. Nothing in here names anybody — people, their status and which character
+   they use all come from DB, which lives in the private repo.
+
+   Art is fetched from art/ rather than inlined: it is 220 KB and never changes, so the browser
+   caches it once instead of shipping it inside every deploy of index.html.               */
+const OFFICE=(()=>{
+const L={"w":1536,"h":1024,"cell":16,"gw":96,"gh":64,"grid":"000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001111111111111100011111111111111111111111111100011111000011100000000000000000000000000100000000001111111111111100011111111100000010000001000100011111000011100000000000000000000000011111100000001111100011111100011111111100000010000001000111111111000011100000000000000000000000011111100000001111100011111100011111001000000000000000000010111111000011100000000000000000000000011111100000111100000000111100011111000000000000000000000000111111111111100011100011111111111111111111100000111100000000111100011111000000000000000000000000111111111111100011111111111000000000111111100000111100000000111100011111000000000000000000000000111111111111100011111111111000000000111111100000111100000000111100011111111000000000000000000011111111100011100011111111111000000000111111100000111100000000111100011111111100000010000000000111111111000011111111111111111110000111111111100000111111111111111100011111111100000010000001000111111111000011100011111111111111000111111111100000111111111111111100011111111111111111111111111111111111000011100011111111111111000111111111100000000011111111111100011111111111111111111111111110000000000011100000000000000000000000111000000000000011111111111100000000000000000000000000000000000000000011100000000000000000000000111000000000000011111111111100000000000000000000000000000000000000000011100000000000000000000000111000000000000011111111111111111111111111111111100000011111010000010011100000000000000000000000111000000000000011111111111111111111111111111111111111111111111111111111100000000000000000000000111000000000000010000111111100001111111000011111110000111111100001111111100000000000000000000000111000000000111000000001110000000011100000000111000000001110000000011111111100000000011111111111111111100000111000000001110000000011100000000111000000001110000000011111111100000000000001111111111111100000111000000001110000000011100000000111000000001110000000011111111100000000000001111111111111100000111000000001110000000011100000000111000000001110000000011111111110000000011111111111111100100000111000000001110000000011100000000111000000001110000000011111111110000000011111111111111000100000111110000111111110001111111000011111111000111111110001111111111110000000011100000000000000000000111110000111111110001111111000011111111000111111110001111111111110000000011100000000000000000000111111111111111111111111111111111111111111111111111111111111111110000000011100000000000000000000111111111111111111111111111111111111111111111111111111111111111110000001111100000000000000000000111111111111111111111111111111111111111111111111111111111111111110000001111100000000000000000000111111111111111111111111111111111111111111111111111111111111111110000001111100000000000000000000110000111111000011111110001111111000111111100001111110000111111111000001111110000000010000000000000000001100000000111000000001100000000110000000011000000001111111000001111110000000010000000000000000001100000000111000000001100000000110000000011000000001111111000001111110000000010000000000000000001100000000111000000001100000000110000000011000000001111111111111111110000000010000000000000000001100000000111000000001100000000110000000011000000001111111111111111111111111110000000000000000001100000000111000001001100000100110000000011000001001111111111111111111111111110000000000111000111111100011111110001111111000111111100001111110001111111110001111111111111111111000000000111000111111100011111110001111111000111111100001111110001111111110001000011111111111111111100000111111111111111111111111111111111111111111111111111111111111111110001000000000000011111111100000111111111111111111111111111111111111111111111111111111111111111110001000000000000000011110000000111111111111111111111111111111111111111111111111111111111111111110001000000000000000011110000000111111111111111111111111111111111111111111111111111111111111111110001000000000000000011110000000111000011111100001111111000011111110000111111000011111110001111110001000000000000000011110000000100000000110000000011100000000111000000001100000000110000000001110001000000000000000011111100000100000000110000000011100000000111000000001100000000110000000001110001011001100111000011111100000100000000110000000011100000000111000000001100000000110000000001110001111111111111000011111100000100000000110000000011100000000111000000001100000000110000000001110001111111111111000011111100000100000000110010000011100000000111000000001100000000110000001001110001111111111111000011111100000111000011111110001111111100011111110000111111000011111110001111110000000000000001000011111100000111000011111110001111111100011111110000111111000011111110001111110000000000000000000011111100000111111111111111111111111111111111111111111111111111111111111111110000000000000000000011111100000111111111111111111111111111111111111111111111111111111111111111110000000000000000000011111100000011111111111111111111111111111111111111111111111111111111111111110000000000000000000011111100000001111111111111111111111111111111111111111111111111111111111111110000000000000000000011111100000001111111111111111111111111111111111111111111111111111111111110000000000000000111001111111100000001111111111111111111111111111111111111111111111111111111111110000000000000000111111111111100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000","seats":[{"x":0.11784,"y":0.19824,"ax":9,"ay":11,"i":0},{"x":0.10286,"y":0.49609,"ax":9,"ay":32,"i":1},{"x":0.2207,"y":0.49609,"ax":21,"ay":32,"i":2},{"x":0.33464,"y":0.49609,"ax":32,"ay":32,"i":3},{"x":0.45247,"y":0.49609,"ax":43,"ay":32,"i":4},{"x":0.56771,"y":0.49609,"ax":54,"ay":32,"i":5},{"x":0.07747,"y":0.68164,"ax":7,"ay":44,"i":6},{"x":0.18229,"y":0.68164,"ax":17,"ay":44,"i":7},{"x":0.28971,"y":0.68164,"ax":27,"ay":44,"i":8},{"x":0.39323,"y":0.68164,"ax":37,"ay":44,"i":9},{"x":0.5013,"y":0.68164,"ax":48,"ay":44,"i":10},{"x":0.60221,"y":0.68164,"ax":57,"ay":44,"i":11},{"x":0.08333,"y":0.86914,"ax":8,"ay":56,"i":12},{"x":0.19141,"y":0.86914,"ax":18,"ay":56,"i":13},{"x":0.30794,"y":0.86914,"ax":29,"ay":56,"i":14},{"x":0.41536,"y":0.86914,"ax":39,"ay":56,"i":15},{"x":0.52148,"y":0.86914,"ax":50,"ay":56,"i":16},{"x":0.63281,"y":0.86914,"ax":60,"ay":56,"i":17}],"dest":{"pantryTable":{"x":0.85286,"y":0.23438,"ax":79,"ay":16,"spots":[{"x":0.82812,"y":0.25781,"ax":79,"ay":16},{"x":0.88021,"y":0.25781,"ax":84,"ay":16},{"x":0.79688,"y":0.22656,"ax":76,"ay":14},{"x":0.91146,"y":0.22656,"ax":87,"ay":14},{"x":0.76562,"y":0.22656,"ax":73,"ay":14},{"x":0.91146,"y":0.30469,"ax":87,"ay":19},{"x":0.94271,"y":0.22656,"ax":90,"ay":14},{"x":0.92188,"y":0.14844,"ax":88,"ay":9},{"x":0.73438,"y":0.22656,"ax":70,"ay":14},{"x":0.97396,"y":0.22656,"ax":93,"ay":14}]},"pantryCounter":{"x":0.78125,"y":0.17578,"ax":75,"ay":12,"spots":[{"x":0.70312,"y":0.19531,"ax":67,"ay":12},{"x":0.66146,"y":0.17969,"ax":63,"ay":11},{"x":0.70312,"y":0.27344,"ax":67,"ay":17},{"x":0.67188,"y":0.25781,"ax":64,"ay":16},{"x":0.63021,"y":0.19531,"ax":60,"ay":12},{"x":0.64062,"y":0.27344,"ax":61,"ay":17},{"x":0.95312,"y":0.14844,"ax":91,"ay":9},{"x":0.66146,"y":0.35156,"ax":63,"ay":22},{"x":0.79688,"y":0.39844,"ax":76,"ay":25},{"x":0.82812,"y":0.39844,"ax":79,"ay":25}]},"coffee":{"x":0.79102,"y":0.68359,"ax":75,"ay":42,"spots":[{"x":0.79688,"y":0.67969,"ax":76,"ay":43},{"x":0.76562,"y":0.66406,"ax":73,"ay":42},{"x":0.82812,"y":0.67969,"ax":79,"ay":43},{"x":0.73438,"y":0.64844,"ax":70,"ay":41},{"x":0.85938,"y":0.67969,"ax":82,"ay":43},{"x":0.74479,"y":0.74219,"ax":71,"ay":47},{"x":0.79688,"y":0.60156,"ax":76,"ay":38},{"x":0.82812,"y":0.60156,"ax":79,"ay":38},{"x":0.70312,"y":0.67969,"ax":67,"ay":43},{"x":0.77604,"y":0.78906,"ax":74,"ay":50}]},"vending":{"x":0.85938,"y":0.69531,"ax":82,"ay":43,"spots":[{"x":0.89062,"y":0.69531,"ax":85,"ay":44},{"x":0.92188,"y":0.69531,"ax":88,"ay":44},{"x":0.85938,"y":0.78906,"ax":82,"ay":50},{"x":0.95312,"y":0.69531,"ax":91,"ay":44},{"x":0.92188,"y":0.61719,"ax":88,"ay":39},{"x":0.92188,"y":0.77344,"ax":88,"ay":49},{"x":0.81771,"y":0.78906,"ax":78,"ay":50},{"x":0.95312,"y":0.77344,"ax":91,"ay":49},{"x":0.92188,"y":0.85156,"ax":88,"ay":54},{"x":0.74479,"y":0.82031,"ax":71,"ay":52}]},"sofa":{"x":0.87565,"y":0.49316,"ax":84,"ay":29,"spots":[{"x":0.88021,"y":0.46094,"ax":84,"ay":29},{"x":0.91146,"y":0.46094,"ax":87,"ay":29},{"x":0.81771,"y":0.49219,"ax":78,"ay":31},{"x":0.94271,"y":0.44531,"ax":90,"ay":28},{"x":0.78646,"y":0.52344,"ax":75,"ay":33},{"x":0.97396,"y":0.46094,"ax":93,"ay":29},{"x":0.91146,"y":0.38281,"ax":87,"ay":24},{"x":0.71354,"y":0.57031,"ax":68,"ay":36}]},"server":{"x":0.7487,"y":0.39062,"ax":67,"ay":28,"spots":[{"x":0.69271,"y":0.39844,"ax":66,"ay":25},{"x":0.70312,"y":0.47656,"ax":67,"ay":30},{"x":0.66146,"y":0.42969,"ax":63,"ay":27},{"x":0.63021,"y":0.38281,"ax":60,"ay":24},{"x":0.67188,"y":0.50781,"ax":64,"ay":32},{"x":0.63021,"y":0.46094,"ax":60,"ay":29},{"x":0.59896,"y":0.38281,"ax":57,"ay":24},{"x":0.59896,"y":0.47656,"ax":57,"ay":30},{"x":0.64062,"y":0.53906,"ax":61,"ay":34},{"x":0.68229,"y":0.58594,"ax":65,"ay":37}]},"entry":{"x":0.80729,"y":0.91797,"ax":81,"ay":60,"spots":[{"x":0.84896,"y":0.94531,"ax":81,"ay":60},{"x":0.88021,"y":0.96094,"ax":84,"ay":61},{"x":0.70312,"y":0.91406,"ax":67,"ay":58},{"x":0.91146,"y":0.94531,"ax":87,"ay":60},{"x":0.70312,"y":0.83594,"ax":67,"ay":53},{"x":0.67188,"y":0.91406,"ax":64,"ay":58},{"x":0.94271,"y":0.92969,"ax":90,"ay":59},{"x":0.95312,"y":0.85156,"ax":91,"ay":54},{"x":0.64062,"y":0.91406,"ax":61,"ay":58},{"x":0.97396,"y":0.92969,"ax":93,"ay":59}]},"cooler":{"x":0.70638,"y":0.12695,"ax":63,"ay":8,"spots":[{"x":0.54688,"y":0.35156,"ax":52,"ay":22}]},"meeting":{"x":0.26042,"y":0.20312,"ax":25,"ay":13,"spots":[{"x":0.19271,"y":0.19531,"ax":18,"ay":12},{"x":0.19271,"y":0.27344,"ax":18,"ay":17},{"x":0.16146,"y":0.19531,"ax":15,"ay":12},{"x":0.16146,"y":0.27344,"ax":15,"ay":17},{"x":0.13021,"y":0.14844,"ax":12,"ay":9},{"x":0.13021,"y":0.27344,"ax":12,"ay":17},{"x":0.21354,"y":0.35156,"ax":20,"ay":22},{"x":0.18229,"y":0.35156,"ax":17,"ay":22},{"x":0.30729,"y":0.36719,"ax":29,"ay":23},{"x":0.09896,"y":0.17969,"ax":9,"ay":11}]}},"meetSeats":[{"x":0.33789,"y":0.17871,"ax":30,"ay":10},{"x":0.3724,"y":0.17871,"ax":37,"ay":10},{"x":0.41146,"y":0.17871,"ax":37,"ay":10},{"x":0.44596,"y":0.17871,"ax":44,"ay":10},{"x":0.48307,"y":0.17871,"ax":44,"ay":10},{"x":0.34245,"y":0.27637,"ax":32,"ay":18},{"x":0.37695,"y":0.27637,"ax":37,"ay":17},{"x":0.41602,"y":0.27637,"ax":39,"ay":18},{"x":0.44987,"y":0.27637,"ax":44,"ay":17},{"x":0.48763,"y":0.27637,"ax":46,"ay":18},{"x":0.29948,"y":0.20801,"ax":26,"ay":13},{"x":0.51497,"y":0.20801,"ax":49,"ay":11},{"x":0.30729,"y":0.28906,"ax":29,"ay":18},{"x":0.51562,"y":0.28906,"ax":49,"ay":18},{"x":0.54688,"y":0.22656,"ax":52,"ay":14},{"x":0.26562,"y":0.22656,"ax":25,"ay":14},{"x":0.54688,"y":0.14844,"ax":52,"ay":9},{"x":0.27604,"y":0.30469,"ax":26,"ay":19},{"x":0.26562,"y":0.14844,"ax":25,"ay":9},{"x":0.57812,"y":0.22656,"ax":55,"ay":14},{"x":0.23438,"y":0.22656,"ax":22,"ay":14},{"x":0.57812,"y":0.14844,"ax":55,"ay":9},{"x":0.24479,"y":0.30469,"ax":23,"ay":19},{"x":0.23438,"y":0.14844,"ax":22,"ay":9}],"sofaSeats":[{"x":0.84896,"y":0.53613,"ax":79,"ay":36},{"x":0.87695,"y":0.53613,"ax":88,"ay":36},{"x":0.90495,"y":0.53613,"ax":88,"ay":36}],"huddles":[[{"x":0.19271,"y":0.53906,"ax":18,"ay":34},{"x":0.22396,"y":0.53906,"ax":21,"ay":34},{"x":0.16146,"y":0.53906,"ax":15,"ay":34}],[{"x":0.45312,"y":0.53906,"ax":43,"ay":34},{"x":0.48438,"y":0.53906,"ax":46,"ay":34},{"x":0.42188,"y":0.53906,"ax":40,"ay":34}],[{"x":0.60938,"y":0.55469,"ax":58,"ay":35},{"x":0.65104,"y":0.61719,"ax":62,"ay":39}],[{"x":0.32812,"y":0.72656,"ax":31,"ay":46},{"x":0.29688,"y":0.72656,"ax":28,"ay":46},{"x":0.35938,"y":0.72656,"ax":34,"ay":46}],[{"x":0.58854,"y":0.72656,"ax":56,"ay":46},{"x":0.55729,"y":0.72656,"ax":53,"ay":46},{"x":0.61979,"y":0.72656,"ax":59,"ay":46}],[{"x":0.19271,"y":0.91406,"ax":18,"ay":58},{"x":0.22396,"y":0.91406,"ax":21,"ay":58},{"x":0.16146,"y":0.91406,"ax":15,"ay":58}],[{"x":0.45312,"y":0.91406,"ax":43,"ay":58},{"x":0.48438,"y":0.91406,"ax":46,"ay":58},{"x":0.42188,"y":0.91406,"ax":40,"ay":58}],[{"x":0.60938,"y":0.91406,"ax":58,"ay":58},{"x":0.57812,"y":0.91406,"ax":55,"ay":58},{"x":0.65104,"y":0.83594,"ax":62,"ay":53}],[{"x":0.15104,"y":0.36719,"ax":14,"ay":23},{"x":0.11979,"y":0.36719,"ax":11,"ay":23},{"x":0.16146,"y":0.44531,"ax":15,"ay":28}],[{"x":0.51562,"y":0.36719,"ax":49,"ay":23},{"x":0.51562,"y":0.44531,"ax":49,"ay":28}],[{"x":0.35938,"y":0.36719,"ax":34,"ay":23},{"x":0.39062,"y":0.36719,"ax":37,"ay":23},{"x":0.42188,"y":0.36719,"ax":40,"ay":23}]],"screens":[{"x":0.10547,"y":0.2207,"w":0.02083,"h":0.01953},{"x":0.09115,"y":0.38867,"w":0.02083,"h":0.01758},{"x":0.20833,"y":0.38867,"w":0.02083,"h":0.01758},{"x":0.32292,"y":0.38867,"w":0.01953,"h":0.01758},{"x":0.44141,"y":0.38867,"w":0.01953,"h":0.01758},{"x":0.55599,"y":0.38867,"w":0.01953,"h":0.01758},{"x":0.0651,"y":0.57812,"w":0.01953,"h":0.01758},{"x":0.16927,"y":0.57812,"w":0.02083,"h":0.01758},{"x":0.27734,"y":0.57812,"w":0.02083,"h":0.01758},{"x":0.38021,"y":0.57812,"w":0.02083,"h":0.01758},{"x":0.48958,"y":0.57812,"w":0.01953,"h":0.01758},{"x":0.59115,"y":0.57812,"w":0.02083,"h":0.01758},{"x":0.07031,"y":0.76562,"w":0.02083,"h":0.01758},{"x":0.17969,"y":0.76562,"w":0.02083,"h":0.01758},{"x":0.29557,"y":0.76562,"w":0.01953,"h":0.01758},{"x":0.40365,"y":0.76562,"w":0.02083,"h":0.01758},{"x":0.50911,"y":0.76562,"w":0.02083,"h":0.01758},{"x":0.61979,"y":0.76562,"w":0.01953,"h":0.01758}]};
+const IW=L.w, IH=L.h, CELL=L.cell, GW=L.gw, GH=L.gh, GRID=L.grid;
+const SEATS=L.seats, DEST=L.dest, MEET=L.meetSeats, SOFA=L.sofaSeats,
+      HUDDLES=L.huddles, SCREENS=L.screens;
+const ART='art/', NSPR=17;
+
+/* ---------- walk grid ----------
+   A cell is walkable only when every pixel in it is floor, so a path that stays on the grid
+   never crosses a desk, a chair, a counter or a wall. */
+const walk=(x,y)=>x>=0&&y>=0&&x<GW&&y<GH&&GRID[y*GW+x]==='1';
+const key=(x,y)=>y*GW+x;
+const cellOf=(px,py)=>[Math.floor(px/CELL),Math.floor(py/CELL)];
+const centre=(cx,cy)=>[cx*CELL+CELL/2,cy*CELL+CELL/2];
+function nearestWalk(cx,cy,maxr=10){
+  if(walk(cx,cy))return[cx,cy];
+  for(let r=1;r<=maxr;r++){
+    let best=null;
+    for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
+      if(Math.max(Math.abs(dx),Math.abs(dy))!==r)continue;
+      const x=cx+dx,y=cy+dy;
+      if(walk(x,y)){const d=dx*dx+dy*dy;if(!best||d<best[0])best=[d,x,y]}
+    }
+    if(best)return[best[1],best[2]];
+  }
+  return null;
+}
+function bfs(ax,ay,bx,by){
+  if(!walk(ax,ay)||!walk(bx,by))return null;
+  const prev=new Int32Array(GW*GH).fill(-1), seen=new Uint8Array(GW*GH);
+  const q=new Int32Array(GW*GH); let head=0,tail=0;
+  q[tail++]=key(ax,ay); seen[key(ax,ay)]=1;
+  while(head<tail){
+    const k=q[head++], x=k%GW, y=(k/GW)|0;
+    if(x===bx&&y===by){const out=[];let c=k;
+      while(c>=0){out.push([c%GW,(c/GW)|0]);c=prev[c]}
+      return out.reverse();}
+    for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){
+      const nx=x+dx,ny=y+dy,nk=key(nx,ny);
+      if(walk(nx,ny)&&!seen[nk]){seen[nk]=1;prev[nk]=k;q[tail++]=nk}
+    }
+  }
+  return null;
+}
+/* is the straight line between two points walkable? sampled with a small body radius so a
+   diagonal cannot slip through the corner where two blocked cells touch */
+const BODY=5;
+function clearLine(x0,y0,x1,y1){
+  const dx=x1-x0,dy=y1-y0,len=Math.hypot(dx,dy);
+  const steps=Math.max(1,Math.ceil(len/(CELL/4)));
+  for(let i=0;i<=steps;i++){
+    const t=i/steps,x=x0+dx*t,y=y0+dy*t;
+    for(const[ox,oy]of[[0,0],[BODY,BODY],[-BODY,BODY],[BODY,-BODY],[-BODY,-BODY]]){
+      const[cx,cy]=cellOf(x+ox,y+oy);
+      if(!walk(cx,cy))return false;
+    }
+  }
+  return true;
+}
+/* BFS gives a staircase of single cells; string-pull it into long straight legs so the walk
+   reads as a walk instead of a right-angle shuffle */
+function smooth(cells){
+  if(!cells)return[];
+  const pts=cells.map(c=>centre(c[0],c[1]));
+  if(pts.length<3)return pts;
+  const out=[pts[0]];let i=0;
+  while(i<pts.length-1){
+    let j=i+1;
+    while(j+1<pts.length&&clearLine(pts[i][0],pts[i][1],pts[j+1][0],pts[j+1][1]))j++;
+    out.push(pts[j]);i=j;
+  }
+  return out;
+}
+
+/* ---------- the day ---------- */
+const DAY=[{t:[570,585],n:'Standup',at:'meet'},
+           {t:[660,682],n:'Tea',    at:'tea'},
+           {t:[780,825],n:'Lunch',  at:'lunch'},
+           {t:[960,982],n:'Tea',    at:'tea'}];
+const OPEN=540, CLOSE=1140;
+const phaseAt=m=>DAY.find(d=>m>=d.t[0]&&m<d.t[1])||null;
+
+/* Nothing here uses Math.random: every choice is a hash of (person, occasion, day), so a
+   standup keeps its seating for as long as it runs and tomorrow's is a different one. */
+let daySeed=0;
+function h32(a,b,c,d){
+  let h=2166136261>>>0;
+  for(const v of[a|0,b|0,c|0,d|0])h=Math.imul(h^v,16777619)>>>0;
+  h^=h>>>15;h=Math.imul(h,2246822507)>>>0;h^=h>>>13;
+  return(h>>>0)/4294967296;
+}
+const hstr=s=>{let h=2166136261>>>0;
+  for(let i=0;i<String(s).length;i++)h=Math.imul(h^String(s).charCodeAt(i),16777619)>>>0;
+  return h>>>0};
+
+const TEAPLACES=['coffee','vending','pantryTable'];
+const LUNCHPLACES=['pantryTable','pantryCounter','coffee'];
+const BREAKPLACES=['coffee','sofa','pantryTable','vending','pantryCounter'];
+const CAP={sofa:SOFA.length};                        // the sofa seats three, and only three
+const capOf=n=>CAP[n]!==undefined?CAP[n]:(DEST[n]&&DEST[n].spots?DEST[n].spots.length:1);
+function dealer(names,limit){
+  const out=[];
+  for(let k=0;out.length<limit&&k<32;k++)
+    for(const n of names)if(k<capOf(n))out.push(n+'#'+k);
+  return out;
+}
+let S=[];                                            // one entry per person on the floor
+const here=()=>S.filter(s=>!s.ooo).map(s=>s.i);
+const shuffled=occ=>here().sort((x,y)=>h32(x,occ,daySeed,1)-h32(y,occ,daySeed,1)||x-y);
+
+function slotWindow(i,ph,occ){
+  const len=ph.t[1]-ph.t[0];
+  const out=ph.t[0]+0.5+h32(i,occ,daySeed,2)*len*(ph.at==='meet'?0.30:0.45);
+  const back=ph.at==='meet'?ph.t[1]-1:ph.t[1]-1-h32(i,occ,daySeed,3)*len*0.30;
+  return[out,Math.max(back,out+1.5)];
+}
+/* Who is doing what, worked out once per occasion. Every place is dealt from one shuffle, so
+   two people can never be sent to the same spot and a full sofa turns the next person away. */
+const cache={key:'',roles:null};
+function rolesAt(k,build){
+  const kk=k+':'+daySeed+':'+S.length;
+  if(cache.key!==kk){cache.key=kk;cache.roles=build()}
+  return cache.roles;
+}
+function phaseRoles(ph){
+  const occ=Math.round(ph.t[0]);
+  return rolesAt('ph'+occ,()=>{
+    const order=shuffled(occ),roles={};
+    const deal=ph.at==='meet'?MEET.map((m,k)=>'meet#'+k)
+              :dealer(ph.at==='lunch'?LUNCHPLACES:TEAPLACES,order.length);
+    let d=0;
+    for(const i of order){
+      if(ph.at!=='meet'&&h32(i,occ,daySeed,4)<0.15)continue;   // a few work through it
+      if(d>=deal.length)continue;
+      const[out,back]=slotWindow(i,ph,occ);
+      roles[i]={start:out,end:back,want:deal[d++]};
+    }
+    return roles;
+  });
+}
+function blockOf(m){
+  let a=OPEN,b=CLOSE;
+  for(const d of DAY){if(d.t[1]<=m&&d.t[1]>a)a=d.t[1];if(d.t[0]>m&&d.t[0]<b)b=d.t[0]}
+  return[Math.round(a),Math.round(b)];
+}
+/* A stretch of desk time: a couple of conversations form in the open floor, the empty meeting
+   room or by the coffee counter, and of whoever is left about half slip off for a break. */
+function blockRoles(m){
+  const[a,b]=blockOf(m),len=b-a;
+  return rolesAt('bl'+a,()=>{
+    const roles={};
+    if(len<20)return roles;
+    const order=shuffled(a);let k=0;
+    const used=new Set();
+    const groups=1+Math.floor(h32(0,a,daySeed,10)*3);
+    for(let g=0;g<groups&&k+2<=order.length;g++){
+      let spot=Math.floor(h32(g,a,daySeed,14)*HUDDLES.length);
+      for(let t=0;t<HUDDLES.length&&used.has(spot);t++)spot=(spot+1)%HUDDLES.length;
+      if(used.has(spot))break;
+      used.add(spot);
+      const size=Math.min(2+Math.floor(h32(g,a,daySeed,13)*2),HUDDLES[spot].length,order.length-k);
+      const start=a+5+h32(g,a,daySeed,11)*(len-14),end=start+3+h32(g,a,daySeed,12)*6;
+      for(let q=0;q<size;q++)roles[order[k+q]]={start,end,want:'huddle'+spot+'#'+q};
+      k+=size;
+    }
+    const deal=dealer(BREAKPLACES,order.length);let d=0;
+    for(;k<order.length&&d<deal.length;k++){
+      const i=order[k];
+      if(h32(i,a,daySeed,5)>0.5)continue;
+      const start=a+6+h32(i,a,daySeed,6)*(len-16);
+      roles[i]={start,end:start+4+h32(i,a,daySeed,7)*8,want:deal[d++]};
+    }
+    return roles;
+  });
+}
+function wantOf(s,m){
+  if(s.ooo)return null;
+  const ph=phaseAt(m);
+  const r=(ph?phaseRoles(ph):blockRoles(m))[s.i];
+  return r&&m>=r.start&&m<=r.end?r.want:'desk';
+}
+function anchorFor(s,want){
+  if(want==='desk')return s.seat;
+  const[name,rank]=want.split('#'),k=+rank||0;
+  if(name==='meet'){const m=MEET[k%MEET.length];return{x:m.x,y:m.y,ax:m.ax,ay:m.ay}}
+  if(name==='sofa')return SOFA[k%SOFA.length];
+  if(name.startsWith('huddle')){const h=HUDDLES[+name.slice(6)];return h[k%h.length]}
+  const d=DEST[name];
+  if(!d)return null;
+  return d.spots&&d.spots.length?d.spots[k%d.spots.length]:d;
+}
+
+/* ---------- movement ---------- */
+const STRIDE=64;                       // px covered by one four-frame cycle
+const walkPx=()=>110;                  // brisk but readable
+const FINAL=CELL*5;                    // how far the last step onto a seat may be
+function retarget(s,m){
+  const w=wantOf(s,m);
+  if(w===s.want)return;
+  s.want=w;
+  if(w===null){s.wp=null;return}
+  const a=anchorFor(s,w);
+  if(!a){s.wp=null;return}
+  const from=nearestWalk(...cellOf(s.px,s.py)), to=nearestWalk(a.ax,a.ay,2);
+  if(!from||!to){s.wp=null;return}
+  const legs=smooth(bfs(from[0],from[1],to[0],to[1]));
+  if(!legs.length){s.wp=null;return}
+  const end=legs[legs.length-1], ax=a.x*IW, ay=a.y*IH;
+  if(Math.hypot(ax-end[0],ay-end[1])<=FINAL)legs.push([ax,ay]);
+  s.wp=legs;s.wi=0;
+}
+function advance(s,dt){
+  if(!s.wp||s.wi>=s.wp.length)return false;
+  let budget=walkPx()*dt,moved=false;
+  while(budget>0&&s.wi<s.wp.length){
+    const[tx,ty]=s.wp[s.wi];
+    const dx=tx-s.px,dy=ty-s.py,d=Math.hypot(dx,dy);
+    if(d<=budget){s.px=tx;s.py=ty;s.wi++;budget-=d;moved=moved||d>0}
+    else{s.px+=dx/d*budget;s.py+=dy/d*budget;budget=0;moved=true;
+         if(Math.abs(dx)>2)s.fx=dx<0?-1:1}
+  }
+  return moved;
+}
+
+/* ---------- who is on the floor ---------- */
+function build(){
+  const today=D.today();
+  const away=new Set(DB.updates.filter(u=>u.date===today&&u.status==='ooo').map(u=>u.personId));
+  S=DB.people.map((p,i)=>{
+    /* seats first, then the spare standing places in the meeting room if the team outgrows
+       the desks — nobody is ever dropped off the picture */
+    const seat=i<SEATS.length?SEATS[i]:MEET[Math.min(MEET.length-1,12+i-SEATS.length)];
+    return{i,p,seat,ooo:away.has(p.id),
+      spr:(p.sprite!=null?p.sprite:hstr(p.id||p.name))%NSPR,
+      px:seat.x*IW,py:seat.y*IH,wp:null,wi:0,fx:1,want:'desk'};
+  });
+  cache.key='';
+}
+
+/* ---------- the badge, ported from the design file ---------- */
+function mix(hex,amt){
+  const n=parseInt(hex.slice(1),16);
+  const c=[(n>>16)&255,(n>>8)&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(v*(1+amt)))));
+  return'rgb('+c.join(',')+')';
+}
+const SKIN=['#f6d3ae','#f0c191','#d29b6b','#a9744a'], HAIR=['#221c17','#3b2a1e','#6b4426','#c26a3a'],
+      SHIRT=['#33323a','#3b4152','#4d5a6b','#6b7a52','#2b2f38','#4a3d3a','#7a6a52','#b8434a'];
+/* looks are derived from the person's id, so they are stable without storing anything extra */
+function look(p){
+  const h=hstr(p.id||p.name);
+  /* >>> not >>: the hash fills 32 bits, and a signed shift turns the top half negative,
+     which indexes off the end of these palettes and hands mix() an undefined colour */
+  return{skin:SKIN[h%SKIN.length],hair:HAIR[(h>>>3)%HAIR.length],shirt:SHIRT[(h>>>6)%SHIRT.length],
+    accent:PAL[(h>>>9)%PAL.length],cut:['short','short','short','bob','long'][(h>>>12)%5],
+    tie:((h>>>15)&1)===1,beard:((h>>>16)&3)===0,glasses:((h>>>18)&3)===0};
+}
+function portrait(p){
+  const k=look(p), shade=mix(k.skin,-.16), brow=mix(k.hair,-.1);
+  const sideH=k.cut==='long'?34:k.cut==='bob'?22:9, b=[];
+  const d=css=>b.push('<i style="'+css+'"></i>');
+  d(`left:8px;top:80px;width:80px;height:32px;background:${k.shirt}`);
+  d(`left:8px;top:107px;width:80px;height:5px;background:rgba(0,0,0,.18)`);
+  d(`left:8px;top:80px;width:6px;height:32px;background:rgba(255,255,255,.08)`);
+  d(`left:30px;top:80px;width:36px;height:16px;background:#f2efe4`);
+  d(`left:38px;top:66px;width:20px;height:16px;background:${shade}`);
+  if(k.tie){d(`left:43px;top:82px;width:10px;height:30px;background:${k.accent}`);
+            d(`left:41px;top:80px;width:14px;height:6px;background:${k.accent}`)}
+  d(`left:20px;top:46px;width:7px;height:13px;background:${shade}`);
+  d(`left:69px;top:46px;width:7px;height:13px;background:${shade}`);
+  d(`left:26px;top:24px;width:44px;height:47px;background:${k.skin}`);
+  d(`left:26px;top:68px;width:44px;height:3px;background:rgba(0,0,0,.1)`);
+  d(`left:22px;top:17px;width:52px;height:17px;background:${k.hair}`);
+  d(`left:26px;top:30px;width:44px;height:7px;background:${k.hair}`);
+  d(`left:22px;top:30px;width:8px;height:${sideH}px;background:${k.hair}`);
+  d(`left:66px;top:30px;width:8px;height:${sideH}px;background:${k.hair}`);
+  d(`left:33px;top:42px;width:11px;height:3px;background:${brow}`);
+  d(`left:52px;top:42px;width:11px;height:3px;background:${brow}`);
+  d(`left:34px;top:48px;width:6px;height:7px;background:#332f2b`);
+  d(`left:56px;top:48px;width:6px;height:7px;background:#332f2b`);
+  d(`left:46px;top:55px;width:4px;height:6px;background:${shade}`);
+  d(`left:41px;top:63px;width:14px;height:3px;background:#a35b52`);
+  d(`left:29px;top:54px;width:5px;height:4px;background:rgba(200,90,80,.28)`);
+  d(`left:62px;top:54px;width:5px;height:4px;background:rgba(200,90,80,.28)`);
+  if(k.beard){d(`left:30px;top:58px;width:36px;height:13px;background:${k.hair}`);
+              d(`left:41px;top:61px;width:14px;height:4px;background:#a35b52`)}
+  if(k.glasses){d(`left:29px;top:45px;width:17px;height:14px;border:3px solid #332f2b`);
+                d(`left:51px;top:45px;width:17px;height:14px;border:3px solid #332f2b`);
+                d(`left:46px;top:50px;width:5px;height:3px;background:#332f2b`)}
+  return'<div class="ofc-pt">'+b.join('')+'</div>';
+}
+
+/* ---------- the loop ---------- */
+let raf=null, last=0, els=[], screens=[], board=null, hh=null, mm=null, clk=null, ph=null;
+function frame(now){
+  const dt=Math.min(.05,(now-last)/1000); last=now;
+  const t=new Date();
+  daySeed=Math.floor((t-new Date(t.getFullYear(),0,0))/86400000)+t.getFullYear()*400;
+  const m=t.getHours()*60+t.getMinutes()+t.getSeconds()/60;
+  const p=phaseAt(m);
+  const p2=v=>String(v).padStart(2,'0');
+  clk.textContent=p2(t.getHours())+':'+p2(t.getMinutes());
+  ph.textContent=p?p.n:(m<OPEN||m>=CLOSE?'After hours':'At their desks');
+  hh.style.transform='translate(-50%,-100%) rotate('+((t.getHours()%12)*30+t.getMinutes()*0.5)+'deg)';
+  mm.style.transform='translate(-50%,-100%) rotate('+(t.getMinutes()*6+t.getSeconds()*0.1)+'deg)';
+  board.style.setProperty('--wd',Math.max(.28,Math.min(.9,STRIDE/walkPx())).toFixed(3)+'s');
+  S.forEach((s,k)=>{
+    retarget(s,m);
+    const moving=advance(s,dt);
+    const el=els[k];if(!el)return;
+    const scr=screens[k];
+    if(s.ooo){el.style.display='none';if(scr)scr.style.display='none';return}
+    el.style.display='';
+    el.style.left=(s.px/IW*100)+'%';el.style.top=(s.py/IH*100)+'%';
+    if(el.__fx!==s.fx){el.style.setProperty('--fx',s.fx);el.__fx=s.fx}
+    const atDesk=s.want==='desk'&&!moving;
+    if(scr)scr.style.display=atDesk?'':'none';
+    el.classList.toggle('walk',moving);
+    el.style.zIndex=2+Math.round(s.py/IH*1000);      // lower on the floor draws in front
+  });
+  raf=requestAnimationFrame(frame);
+}
+function stop(){if(raf){cancelAnimationFrame(raf);raf=null}}
+
+function show(){
+  build();
+  const n=S.filter(s=>!s.ooo).length, out=S.length-n;
+  $('#main').innerHTML=`
+  <div class="glass card ofc-wrap">
+    <div class="ofc-bar">
+      <span class="ofc-clock" id="ofcclk">--:--</span>
+      <span class="ofc-phase" id="ofcph"></span>
+      <div class="sp"></div>
+      <span class="sub">${n} in the office${out?` · ${out} out`:''}</span>
+    </div>
+    <div class="ofc-board" id="ofcboard" style="background-image:url(${ART}office.webp)">
+      <div class="ofc-wc"><i class="hh"></i><i class="mm"></i></div>
+    </div>
+  </div>
+  <div class="ofc-rail">${S.map(s=>`
+    <button class="ofc-badge" data-p="${s.p.id}" aria-label="${esc(s.p.name)}">
+      <div class="ofc-bhd"><span>ID CARD</span><span class="nd">#${String(s.i+1).padStart(3,'0')}</span></div>
+      <div class="ofc-bmid">
+        <div class="ofc-frame">${portrait(s.p)}</div>
+        <div class="ofc-bname">${esc(s.p.name)}</div>
+        ${s.p.role?`<div class="ofc-brole">${esc(s.p.role)}</div>`:''}
+      </div>
+      <div class="ofc-bst">
+        <i style="background:${s.ooo?'var(--purple,#BF5AF2)':'var(--green)'}"></i>
+        <b style="color:${s.ooo?'var(--purple,#BF5AF2)':'var(--green)'}">${s.ooo?'OUT OF OFFICE':'WORKING'}</b>
+      </div>
+      <div class="ofc-bft"><div class="ofc-code"></div></div>
+    </button>`).join('')}</div>`;
+
+  board=$('#ofcboard'); clk=$('#ofcclk'); ph=$('#ofcph');
+  hh=$('.ofc-wc .hh'); mm=$('.ofc-wc .mm');
+  const layer=document.createElement('div');
+  layer.style.cssText='position:absolute;inset:0';
+  layer.innerHTML=S.map((s,k)=>`<div class="ofc-p" data-k="${k}" data-p="${s.p.id}"
+    title="${esc(s.p.name)}" style="--idle:url(${ART}s${String(s.spr).padStart(2,'0')}.png);
+    --walk:url(${ART}w${String(s.spr).padStart(2,'0')}.png)">
+    <div class="ofc-spr"></div><div class="ofc-tag">${esc(s.p.name.split(/\s+/)[0])}</div></div>`).join('');
+  board.appendChild(layer);
+  els=[...layer.querySelectorAll('.ofc-p')];
+  /* a monitor is dark until somebody is sat at it — there are more desks than developers, and
+     an unclaimed one is never touched by the loop */
+  screens=S.map(s=>{
+    const r=SCREENS[s.i];if(!r)return null;
+    const el=document.createElement('div');
+    el.className='ofc-scr';
+    el.style.cssText=`left:${r.x*100}%;top:${r.y*100}%;width:${r.w*100}%;height:${r.h*100}%;display:none`;
+    el.innerHTML='<i></i><i></i><i></i><i></i>';
+    board.appendChild(el);
+    return el;
+  });
+  /* tapping a desk or a card is how you get to that person's line in Today */
+  const jump=e=>{
+    const t=e.target.closest('[data-p]');if(!t)return;
+    goToPerson(t.dataset.p);
+  };
+  board.onclick=jump; $('.ofc-rail').onclick=jump;
+  stop(); last=performance.now(); raf=requestAnimationFrame(frame);
+}
+function goToPerson(pid){
+  view='today';
+  render();
+  const f=$$(`#main tr[data-p="${pid}"] .c-tk`)[0];
+  if(f){f.scrollIntoView({block:'center',behavior:'smooth'});setTimeout(()=>f.focus(),260)}
+}
+return{show,stop,build,wantOf,anchorFor,state:()=>S,setSeed:v=>{daySeed=v;cache.key=''}};
+})();
 
 /* ==================== view: today (live grid) ==================== */
 let day=D.today();
@@ -2833,7 +3314,9 @@ function buildMenu(){
     else if(a==='sec')secretForm();
     else if(a==='theme')toggleTheme();
     else if(a==='wall')cycleWall();
-    else if(a==='crit'){CRITTERS=!CRITTERS;toast('Critters '+(CRITTERS?'on':'off'));if(!CRITTERS)$$('.critter').forEach(c=>c.remove())}
+    else if(a==='crit'){CRITTERS=!CRITTERS;toast('Critters '+(CRITTERS?'on':'off'));
+      document.documentElement.classList.toggle('nocrit',!CRITTERS);
+      if(!CRITTERS)$$('.critter').forEach(c=>c.remove())}
     else if(a==='sync'){await load();render();toast('Up to date')}
     else if(a==='ghin')ghConnect();
     else if(a==='ghout'){clearInterval(GH.poll);ghForget();ghPinForget();ghMemForget();location.reload()}
