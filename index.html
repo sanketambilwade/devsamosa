@@ -51,6 +51,11 @@
   --paper:#1F1D1A; --paper2:#282420; --paper3:#302B26;
   --edge:#4A443B; --edge2:#3A342D; --pdash:#3A342D;
   --pshadow:3px 3px 0 rgba(0,0,0,.5); --pshadow2:2px 2px 0 rgba(0,0,0,.42);
+  /* Selection is a stamp, not a colour: the ink block a rubber stamp leaves. It is the one
+     highlight that collides with no status (blue action, green done, red blocked, purple OOO,
+     saffron unassigned), and on near-black paper the stamp has to be the pale half. */
+  --sel:#F2EDE1; --selink:#1F1D1A;
+  --selsoft:rgba(242,237,225,.14); --selglow:rgba(242,237,225,.26);
 }
 :root[data-t="light"]{
   color-scheme:light;
@@ -63,6 +68,8 @@
   --paper:#FDFAF0; --paper2:#F3ECDC; --paper3:#EAE1CC;
   --edge:#22201E; --edge2:#CDC3AC; --pdash:#D8CFB6;
   --pshadow:3px 3px 0 rgba(20,18,16,.26); --pshadow2:2px 2px 0 rgba(20,18,16,.2);
+  --sel:#22201E; --selink:#FDFAF0;
+  --selsoft:rgba(34,32,30,.10); --selglow:rgba(34,32,30,.22);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
@@ -125,8 +132,8 @@ button.b.p:hover{background:#3D9BFF}
 button.b.p:active{background:#0A6FD8}
 
 /* outlined — secondary emphasis. A fill here would read as "selected". */
-button.b.w{background:var(--paper2);color:var(--saffron);border-color:var(--saffron)}
-button.b.w:hover{background:rgba(255,159,10,.16)}
+button.b.w{background:var(--paper2);color:var(--blue);border-color:var(--blue)}
+button.b.w:hover{background:rgba(10,132,255,.16)}
 button.b.d{background:var(--paper2);color:var(--red);border-color:var(--red)}
 button.b.d:hover{background:rgba(255,69,58,.16)}
 
@@ -135,8 +142,8 @@ button.b.ghost{background:transparent;border-color:transparent;box-shadow:none;c
 button.b.ghost:hover{background:var(--fill)}
 button.b.ghost:active{transform:none;background:var(--fill2)}
 
-button.b.on{background:var(--saffron);color:#2b2205}
-button.b.on:hover{background:#FFB53D}
+button.b.on{background:var(--sel);color:var(--selink);border-color:var(--edge)}
+button.b.on:hover{background:var(--sel);color:var(--selink)}
 button.b.s{min-height:28px;padding:0 10px;font-size:12.5px;border-radius:var(--rp2)}
 @media(max-width:860px){button.b{min-height:40px;padding:0 18px}button.b.s{min-height:34px;padding:0 14px}}
 
@@ -155,8 +162,8 @@ button.i.e:hover{color:var(--blue);background:rgba(10,132,255,.13)}
   font-weight:700;letter-spacing:0;padding:6px 13px;border-radius:3px;cursor:pointer;
   white-space:nowrap;transition:background .16s,color .16s;position:relative}
 .seg button:hover{background:var(--paper3);color:var(--txt)}
-.seg button[aria-selected="true"]{background:var(--saffron);color:#2b2205}
-.seg button[aria-selected="true"]:hover{background:#FFB53D}
+.seg button[aria-selected="true"]{background:var(--sel);color:var(--selink)}
+.seg button[aria-selected="true"]:hover{background:var(--sel);color:var(--selink)}
 
 select option{background:var(--optbg);color:var(--txt);font-weight:500;padding:6px}
 input,select,textarea{font-family:var(--sans);font-size:15px;background:var(--field);color:var(--txt);
@@ -165,15 +172,15 @@ input,select,textarea{font-family:var(--sans);font-size:15px;background:var(--fi
 select{background-image:linear-gradient(45deg,transparent 50%,var(--txt3) 50%),linear-gradient(135deg,var(--txt3) 50%,transparent 50%);
   background-position:calc(100% - 15px) 50%,calc(100% - 10px) 50%;background-size:5px 5px,5px 5px;
   background-repeat:no-repeat;padding-right:30px}
-input:focus,select:focus,textarea:focus{border-color:var(--saffron);box-shadow:0 0 0 3px rgba(255,159,10,.28)}
+input:focus,select:focus,textarea:focus{border-color:var(--sel);box-shadow:0 0 0 3px var(--selglow)}
 input::placeholder,textarea::placeholder{color:var(--txt3)}
 input[type=checkbox]{width:19px;height:19px;min-width:19px;flex:0 0 auto;padding:0;margin:0;
   border:var(--pbw) solid var(--edge);border-radius:var(--rp2);background:var(--field);
   display:inline-grid;place-content:center;cursor:pointer;vertical-align:-4px}
-input[type=checkbox]:checked{background:var(--saffron)}
-input[type=checkbox]:checked::after{content:"";width:9px;height:5px;border:2px solid #2b2205;
+input[type=checkbox]:checked{background:var(--sel)}
+input[type=checkbox]:checked::after{content:"";width:9px;height:5px;border:2px solid var(--selink);
   border-top:0;border-right:0;transform:rotate(-45deg) translateY(-1px)}
-input[type=checkbox]:focus{box-shadow:0 0 0 3px rgba(255,159,10,.28)}
+input[type=checkbox]:focus{box-shadow:0 0 0 3px var(--selglow)}
 label.f{display:block}
 label.f .lbl{margin-bottom:6px;display:block}
 
@@ -205,7 +212,7 @@ nav.tabs button{flex:1;background:none;border:0;color:var(--txt3);cursor:pointer
   border-radius:var(--rp2);display:flex;flex-direction:column;align-items:center;gap:3px;
   font-family:var(--sans);font-size:10px;font-weight:700;transition:background .16s,color .16s}
 nav.tabs button svg{width:22px;height:22px}
-nav.tabs button[aria-selected="true"]{color:#2b2205;background:var(--saffron)}
+nav.tabs button[aria-selected="true"]{color:var(--selink);background:var(--sel)}
 
 /* ---------------- tables ---------------- */
 table{width:100%;border-collapse:collapse}
@@ -234,7 +241,7 @@ td.n,th.n{text-align:right;white-space:nowrap}
    than one of ten fill colours, which is what made the name column read as confetti */
 .av{width:28px;height:28px;border-radius:var(--rp2);flex:0 0 auto;display:grid;place-items:center;
   font-size:11px;font-weight:700;letter-spacing:.02em;font-family:var(--mono);
-  background:var(--paper2);color:var(--txt2);border:1.5px solid var(--edge)}
+  background:var(--paper2);color:var(--txt);border:1.5px solid var(--edge)}
 .nm{display:flex;align-items:center;gap:9px;flex-wrap:nowrap}
 /* stacked cards on phones */
 @media(max-width:720px){
@@ -297,7 +304,7 @@ td.n,th.n{text-align:right;white-space:nowrap}
 .rr{display:flex;border-bottom:1px solid var(--hair)}
 .rr:last-child{border-bottom:0}
 .rr .rbt{height:auto;min-height:58px}
-.who{font-size:14px;font-weight:500;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.who{font-size:14px;font-weight:500;color:var(--txt);letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar{position:absolute;height:21px;border-radius:var(--rp2);display:flex;align-items:center;padding:0 9px;
   font-size:11px;font-weight:700;overflow:hidden;white-space:nowrap;border:1.5px solid;
   transition:transform .14s}
@@ -441,11 +448,11 @@ td.n,th.n{text-align:right;white-space:nowrap}
 .dcell b{font-family:var(--mono);font-size:12.5px;font-weight:700}
 .dcell span{font-size:9.5px;color:var(--txt3);text-transform:uppercase}
 .dcell.wk b{color:var(--txt3);font-weight:500}
-.dcell.tdy{background:rgba(255,159,10,.15);border-radius:var(--rp2)}
-.dcell.tdy b{color:var(--saffron);font-weight:700}
-.dcell.tdy span{color:var(--saffron);opacity:.75}
+.dcell.tdy{background:var(--selsoft);border-radius:var(--rp2)}
+.dcell.tdy b{color:var(--txt);font-weight:700}
+.dcell.tdy span{color:var(--txt2)}
 .dcell.tdy::after{content:"";position:absolute;left:22%;right:22%;bottom:5px;height:2px;
-  border-radius:2px;background:var(--saffron)}
+  border-radius:2px;background:var(--sel)}
 .bk{position:absolute;height:20px;border-radius:var(--rp2);display:flex;align-items:center;
   font-size:11px;font-weight:700;overflow:hidden;cursor:grab;user-select:none;
   border:1.5px solid var(--edge);transition:filter .12s}
@@ -568,6 +575,11 @@ td.n,th.n{text-align:right;white-space:nowrap}
   border-top:2px dashed #d8cfb6;display:flex;align-items:center;justify-content:center;gap:5px;
   cursor:pointer;font-family:var(--sans)}
 .ofc-bst i{width:6px;height:6px;border-radius:50%;background:var(--green);display:block}
+/* somebody on the roster but not on the board: they have a desk and a card, but there is no
+   row in Today to mark them out of office, so the line is printed rather than chosen */
+.ofc-bst.gst{cursor:default;color:#8a8069;font:700 8.5px/1 var(--sans);letter-spacing:.6px}
+.ofc-bst.gst i{background:#c2b7a0}
+.ofc-face.gst{cursor:default}
 /* the field rules further up give every select a box, a chevron and width:100%; on a 104px
    badge it has to read as the printed line it replaced, so all of that is undone here */
 .ofc-bsel{-webkit-appearance:none;appearance:none;background:none;background-image:none;
@@ -583,7 +595,8 @@ td.n,th.n{text-align:right;white-space:nowrap}
 .ofc-pk{aspect-ratio:2/3;border:2px solid var(--hair);border-radius:9px;background-color:var(--fill);
   background-repeat:no-repeat;background-size:400% 600%;background-position:0% 80%;
   image-rendering:pixelated;cursor:pointer;padding:0}
-.ofc-pk.on{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue)}
+.ofc-pk.used{opacity:.42}
+.ofc-pk.on{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue);opacity:1}
 @media(max-width:720px){
   /* The floor is 3:2, so fitted to a portrait phone it is 360x240 and everybody is 12px tall.
      It renders wider than the screen inside a scrolling frame instead — twice the size, name
@@ -735,10 +748,10 @@ button,.chip,.cday,.mi,.pki,.bk,.seg button{touch-action:manipulation}
 .cday.wknd{background:transparent;border-style:dashed}
 .cday.has{background:rgba(10,132,255,.16);border-color:var(--blue);color:var(--txt)}
 .cday:hover:not(.void){transform:translate(-1px,-1px);box-shadow:var(--pshadow2)}
-.cday.now{border-color:var(--saffron);border-width:2px}
-.cday.now b{color:var(--saffron)}
-.cday.sel{background:var(--saffron);border-color:var(--edge);color:#2b2205}
-.cday.sel b,.cday.sel em{color:#2b2205}
+.cday.now{border-color:var(--sel);border-width:2px}
+.cday.now b{color:var(--txt)}
+.cday.sel{background:var(--sel);border-color:var(--edge);color:var(--selink)}
+.cday.sel b,.cday.sel em{color:var(--selink)}
 .calwrap{padding:12px 16px 16px;border-bottom:var(--pbw) solid var(--edge);background:var(--paper2)}
 .calbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:12px}
 .dayhd{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:13px 16px;
@@ -940,7 +953,10 @@ header{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
 .tbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:10px 12px;
   background:var(--paper2);border-bottom:var(--pbw) solid var(--edge)}
 .dlabel{font-size:13.5px;color:var(--txt2);padding:0 4px}
-.dlabel b{color:var(--accent);font-weight:600}
+/* "Today" / "This week" is stamped rather than tinted - ink reads on both grounds where a
+   single accent colour cannot, and it matches the selected tab sitting above it. */
+.dlabel b{color:var(--selink);background:var(--sel);font-weight:700;font-size:12px;
+  padding:2px 7px;border-radius:var(--rp2);white-space:nowrap}
 
 /* ---- dense table ---- */
 .dense th{padding:8px 12px;position:sticky;top:0;z-index:2;background:var(--paper2)}
@@ -975,8 +991,7 @@ header{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
 .gt input,.gt select{background-color:transparent;border-color:transparent;border-radius:9px;
   padding:6px 8px;font-size:14px;transition:background-color .12s}
 .gt input:hover,.gt select:hover{background-color:var(--fill)}
-.gt input:focus,.gt select:focus{background-color:var(--field);border-color:var(--saffron)}
-.gt tr.ghost td .who{opacity:.82}
+.gt input:focus,.gt select:focus{background-color:var(--field);border-color:var(--sel)}
 .gt tr.ghost input::placeholder{color:var(--txt3)}
 .gt .c-tk{min-width:170px}
 .gt .c-es,.gt .c-sp{width:62px;text-align:right}
@@ -995,7 +1010,7 @@ header{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--edge2);border-top-color:var(--blue);
   border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
 @keyframes sp{to{transform:rotate(360deg)}}
-:focus-visible{outline:2px solid var(--saffron);outline-offset:2px}
+:focus-visible{outline:2px solid var(--sel);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 /* The office is the content, not decoration: people still have to be seen walking when the OS
    asks for reduced motion. Windows with "show animations" off reports it, and answering that by
@@ -2561,7 +2576,40 @@ function advance(s,dt){
    see BFSDIRS. */
 
 /* ---------- who is on the floor ---------- */
-const spriteOf=p=>(p.sprite!=null?p.sprite:hstr(p.id||p.name))%NSPR;
+/* Faces are dealt, not hashed. Seventeen sheets across eighteen people meant six pairs of
+   twins on one board, and worse: the hash handed the one female sheet to whoever landed on
+   it, so two of the men wore it and the one woman on the board wore a bearded man. Anyone
+   with a face pinned keeps it; the rest take the first free sheet from their own hash, probing
+   forward on a clash. The female sheet is never dealt automatically - it is only ever worn
+   by somebody who was given it deliberately. See CLAUDE.md: it must stay at index 10. */
+const FEMSPR=[10];
+const AUTOSPR=Array.from({length:NSPR},(_,i)=>i).filter(i=>!FEMSPR.includes(i));
+const fixSpr=n=>((n%NSPR)+NSPR)%NSPR;
+let FACEOF=new Map();
+function dealFaces(cast){
+  FACEOF=new Map(); const taken=new Set();
+  cast.forEach(p=>{if(p.sprite!=null){const s=fixSpr(p.sprite);FACEOF.set(p.id,s);taken.add(s)}});
+  cast.forEach(p=>{
+    if(FACEOF.has(p.id))return;
+    const n=AUTOSPR.length, h=hstr(p.id||p.name);
+    let s=AUTOSPR[h%n];
+    for(let k=1;taken.has(s)&&k<n;k++)s=AUTOSPR[(h+k)%n];
+    FACEOF.set(p.id,s); taken.add(s);
+  });
+}
+const spriteOf=p=>FACEOF.has(p.id)?FACEOF.get(p.id)
+  :p.sprite!=null?fixSpr(p.sprite):AUTOSPR[hstr(p.id||p.name)%AUTOSPR.length];
+/* The floor is the whole roster, not only the people Today has a row for: somebody can be in
+   the office without being one of the rows you type into. Roster-only people get a stable
+   synthetic id, so their desk, their face and their card stay put between renders, and
+   nothing is ever written back to the board for them. */
+const GUEST='roster:';
+const isGuest=id=>String(id).indexOf(GUEST)===0;
+function floorCast(){
+  const on=new Set(DB.people.map(p=>p.name));
+  return DB.people.concat((DB.roster||[]).filter(n=>!on.has(n))
+    .map(n=>({id:GUEST+n,name:n,role:'',guest:true})));
+}
 function build(){
   const today=D.today();
   const away=new Set(DB.updates.filter(u=>u.date===today&&u.status==='ooo').map(u=>u.personId));
@@ -2575,7 +2623,8 @@ function build(){
     const s=next<SEATS.length?SEATS[next]:MEET[Math.min(MEET.length-1,12+next-SEATS.length)];
     next++; return s;
   };
-  S=DB.people.map((p,i)=>{
+  const cast=floorCast(); dealFaces(cast);
+  S=cast.map((p,i)=>{
     const seat=(p.desk===0&&fixed>=0)?SEATS[fixed]:take();
     return{i,p,seat,anchor:seat,ooo:away.has(p.id),spr:spriteOf(p),
       px:seat.x*IW,py:seat.y*IH,wp:null,wi:0,dir:seat.f||'front',want:'desk'};
@@ -2585,7 +2634,7 @@ function build(){
 
 /* ---------- the badge, ported from the design file ---------- */
 /* The badge used to draw its own face from a hash of the person, which meant a man could be
-   handed a bob or long hair — there is exactly one female character in the art (Tanya) and the
+   handed a bob or long hair — there is exactly one female character in the art and the
    cards were inventing more. It crops the head straight out of the sprite sheet now, so the
    card is always the person standing at that desk. */
 function portrait(p){
@@ -2614,9 +2663,14 @@ function charSheet(pid){
   const cur=spriteOf(p);
   modal(`<div class="ch"><h2>${esc(p.name)}</h2></div><div class="cb">
     <p class="sub" style="margin:0 0 8px">Character on the floor</p>
-    <div class="ofc-pick">${Array.from({length:NSPR},(_,i)=>
-      `<button class="ofc-pk${i===cur?' on':''}" data-i="${i}"
-        style="background-image:url(${ART}c${pad(i)}.png)"></button>`).join('')}</div>
+    <div class="ofc-pick">${(()=>{
+      /* which sheets somebody else is already wearing, so two people are not made twins */
+      const used=new Set([...FACEOF].filter(([id])=>id!==p.id).map(([,n])=>n));
+      return Array.from({length:NSPR},(_,i)=>
+        `<button class="ofc-pk${i===cur?' on':''}${used.has(i)?' used':''}" data-i="${i}"
+          title="${used.has(i)?'Already on the floor':'Free'}"
+          style="background-image:url(${ART}c${pad(i)}.png)"></button>`).join('');
+    })()}</div>
     <label class="row" style="margin-top:16px;gap:9px;align-items:center;cursor:pointer">
       <input type="checkbox" id="mgr" ${p.desk===0?'checked':''}>
       <span>Sits at the manager desk</span></label>
@@ -2752,23 +2806,27 @@ function projOf(pid){
   const r=DB.updates.find(u=>u.date===D.today()&&u.personId===pid);
   return (r&&DB.projects.find(x=>x.id===r.projectId))||null;
 }
-const castOf=()=>DB.people.map(p=>p.id+':'+(p.sprite==null?'':p.sprite)
+const castOf=()=>floorCast().map(p=>p.id+':'+(p.sprite==null?'':p.sprite)
                                   +':'+(p.desk===0?'m':'')).join('|');
 function railHTML(){
   return S.map(s=>`
     <div class="ofc-badge${s.ooo?' out':''}" data-p="${s.p.id}">
       <div class="ofc-bhd"><span>ID</span><span>${pad(s.i+1)}</span></div>
-      <button class="ofc-face" data-act="char" title="Change character">
-        <div class="ofc-frame">${portrait(s.p)}</div></button>
+      ${s.p.guest?`<div class="ofc-face gst">
+        <div class="ofc-frame">${portrait(s.p)}</div></div>`
+      :`<button class="ofc-face" data-act="char" title="Change character">
+        <div class="ofc-frame">${portrait(s.p)}</div></button>`}
       <div class="ofc-bname" data-act="open" title="Open in Today">${esc(s.p.name)}</div>
       ${(()=>{const pr=projOf(s.p.id);
         return `<div class="ofc-bpr${pr?'':' none'}" data-act="open" title="${pr?esc(pr.name):'No project yet'}">
           ${pr?`<i style="background:${pr.color}"></i>${esc(pr.name)}`:'—'}</div>`;})()}
-      <label class="ofc-bst" title="Working, or out of office today"><i></i>
+      ${s.p.guest
+        ?`<div class="ofc-bst gst" title="On the roster, not on the board"><i></i>IN OFFICE</div>`
+        :`<label class="ofc-bst" title="Working, or out of office today"><i></i>
         <select class="ofc-bsel" data-act="status" aria-label="${esc(s.p.name)} today">
           <option value="in"${s.ooo?'':' selected'}>WORKING</option>
           <option value="out"${s.ooo?' selected':''}>OOO</option>
-        </select></label>
+        </select></label>`}
     </div>`).join('');
 }
 function headHTML(m){
@@ -2867,12 +2925,13 @@ function mount(){
     }else hold={lo:+b.dataset.lo,hi:+b.dataset.hi};
     simM=hold.lo;
   };
-  board.onclick=e=>{const t=e.target.closest('[data-p]');if(t)goToPerson(t.dataset.p)};
+  board.onclick=e=>{const t=e.target.closest('[data-p]');if(t)openPerson(t.dataset.p)};
   $('.ofc-rail').onclick=e=>{
     const card=e.target.closest('[data-p]'); if(!card)return;
     const hit=e.target.closest('[data-act]');
     const act=hit&&hit.dataset.act;
     if(act==='status')return;                       // the select below handles itself
+    if(isGuest(card.dataset.p))return openPerson(card.dataset.p);
     if(act==='char')return charSheet(card.dataset.p);
     goToPerson(card.dataset.p);
   };
@@ -2882,6 +2941,12 @@ function mount(){
     if(sel&&card)setAway(card.dataset.p,sel.value==='out');
   };
   stop(); last=performance.now(); raf=requestAnimationFrame(frame);
+}
+/* Tapping somebody only goes somewhere if Today has a row for them. */
+function openPerson(pid){
+  if(!isGuest(pid))return goToPerson(pid);
+  toast(pid.slice(GUEST.length)+' is on the roster but not on the board \u2014 '+
+    'add them in Team & Projects to type updates for them');
 }
 function goToPerson(pid){
   view='today';
