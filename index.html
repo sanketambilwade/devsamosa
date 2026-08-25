@@ -451,6 +451,15 @@ td.n,th.n{text-align:right;white-space:nowrap}
    The line sits at 62% of the chair — see art/grid6.py, which is where it was measured. */
 .ofc-chair{position:absolute;background-repeat:no-repeat;
   image-rendering:pixelated;pointer-events:none}
+/* Lights off is a second plate of the same room, not a filter over the first — the neon under
+   the desks and the glow off the monitors are painted, and no amount of dimming invents them.
+   Everything that draws the floor reads --plate, so the switch is one property. */
+.ofc-board.dark .ofc-p{filter:brightness(.66) saturate(.85) contrast(1.05)}
+.ofc-light{display:inline-flex;align-items:center;gap:5px;font:600 10px/1 var(--sans);
+  letter-spacing:.2px;color:var(--txt2);background:var(--fill);border:0;border-radius:7px;
+  padding:6px 8px;cursor:pointer}
+.ofc-light b{font-weight:700}
+.ofc-light.on{background:var(--saffron);color:#2b2205}
 .ofc-jump{display:flex;gap:4px}
 .ofc-jb{font:600 10px/1 var(--sans);letter-spacing:.2px;color:var(--txt2);background:var(--fill);
   border:0;border-radius:7px;padding:6px 8px;cursor:pointer}
@@ -903,6 +912,10 @@ header{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
   <main id="main"><div class="glass card"><div class="cb">
     <div class="skel" style="width:36%"></div><div class="skel" style="width:70%"></div><div class="skel" style="width:52%"></div>
   </div></div></main>
+  <!-- The office lives outside #main because every other view replaces #main's innerHTML, and
+       rebuilding the floor would put everyone back at their desk, restart the clock and lose
+       whatever was on screen. Switching tabs hides this; it does not destroy it. -->
+  <main id="ofc" class="hidden"></main>
 </div>
 
 <nav class="tabs hidden" id="tabs"></nav>
@@ -2074,8 +2087,12 @@ function ticker(){
 function render(){
   ticker();
   $$('#segnav button,#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===view));
-  if(view!=='office')OFFICE.stop();     // the floor keeps animating otherwise
-  ({office:OFFICE.show,today:vToday,plan:vPlan,reports:vReports,setup:vSetup})[view]();
+  const onFloor=view==='office';
+  $('#ofc').classList.toggle('hidden',!onFloor);
+  $('#main').classList.toggle('hidden',onFloor);
+  OFFICE.visible(onFloor);              // keeps running either way, just stops drawing
+  if(onFloor)OFFICE.show();
+  else({today:vToday,plan:vPlan,reports:vReports,setup:vSetup})[view]();
   if(!ADMIN)lockdown();
 }
 
@@ -2485,17 +2502,22 @@ function frame(now){
   let m=t.getHours()*60+t.getMinutes()+t.getSeconds()/60;
   if(hold){simM=Math.min(hold.hi,simM+dt*14/60);m=simM}
   const p=phaseAt(m);
-  const p2=v=>String(v).padStart(2,'0');
-  const hr=Math.floor(m/60)%24, mn=Math.floor(m%60);
-  clk.textContent=p2(hr)+':'+p2(mn);
-  ph.textContent=(p?p.n:(m<OPEN||m>=CLOSE?'After hours':'At their desks'))+(hold?' · test':'');
-  hh.style.transform='translate(-50%,-100%) rotate('+((hr%12)*30+mn*0.5)+'deg)';
-  mm.style.transform='translate(-50%,-100%) rotate('+(mn*6+(m*60%60)*0.1)+'deg)';
-  board.style.setProperty('--wd',Math.max(.28,Math.min(.9,STRIDE/walkPx())).toFixed(3)+'s');
+  /* On another tab the day carries on — people still walk to the standup, the clock still
+     runs — but there is nothing on screen to write it to, so everything below the simulation
+     is skipped until the tab comes back. */
+  if(shown){
+    const p2=v=>String(v).padStart(2,'0');
+    const hr=Math.floor(m/60)%24, mn=Math.floor(m%60);
+    clk.textContent=p2(hr)+':'+p2(mn);
+    ph.textContent=(p?p.n:(m<OPEN||m>=CLOSE?'After hours':'At their desks'))+(hold?' · test':'');
+    hh.style.transform='translate(-50%,-100%) rotate('+((hr%12)*30+mn*0.5)+'deg)';
+    mm.style.transform='translate(-50%,-100%) rotate('+(mn*6+(m*60%60)*0.1)+'deg)';
+    board.style.setProperty('--wd',Math.max(.28,Math.min(.9,STRIDE/walkPx())).toFixed(3)+'s');
+  }
   S.forEach((s,k)=>{
     retarget(s,m);
     const moving=advance(s,dt);
-    const el=els[k];if(!el)return;
+    const el=els[k];if(!el||!shown)return;
     const scr=screens[k];
     if(s.ooo){el.style.display='none';if(scr)scr.style.display='none';return}
     el.style.display='';
@@ -2526,10 +2548,61 @@ function frame(now){
 }
 function stop(){if(raf){cancelAnimationFrame(raf);raf=null}}
 
-function show(){
-  build();
+/* Built once and then left alone. Coming back to the tab must not put everyone at their desk
+   and restart the clock, so `show` only rebuilds when the cast has actually changed — somebody
+   added, removed, given a different character or handed the manager desk. Anything softer than
+   that, like who is out today, is patched in place. */
+let mounted=false, cast='', shown=false;
+/* Which plate is on the wall. Kept per device rather than on the board: it is how somebody
+   wants to look at the room, not a fact about the team, and a shared board would mean a commit
+   to the repo every time anybody flicked the switch. */
+const LIGHTKEY='devsamosa:lights';
+let LIT=true;
+try{LIT=localStorage.getItem(LIGHTKEY)!=='off'}catch(e){}
+function applyLights(){
+  if(!board)return;
+  board.style.setProperty('--plate',`url(${ART}${LIT?'office.webp':'office-dark.webp'})`);
+  board.classList.toggle('dark',!LIT);
+  const b=$('#ofclight');
+  if(b){b.classList.toggle('on',LIT); b.setAttribute('aria-pressed',String(!LIT));
+        b.querySelector('b').textContent=LIT?'Lights on':'Lights off';}
+}
+function setLights(on){
+  LIT=on; try{localStorage.setItem(LIGHTKEY,on?'on':'off')}catch(e){}
+  applyLights();
+}
+const castOf=()=>DB.people.map(p=>p.id+':'+(p.sprite==null?'':p.sprite)
+                                  +':'+(p.desk===0?'m':'')).join('|');
+function railHTML(){
+  return S.map(s=>`
+    <div class="ofc-badge${s.ooo?' out':''}" data-p="${s.p.id}">
+      <div class="ofc-bhd"><span>ID</span><span>${pad(s.i+1)}</span></div>
+      <button class="ofc-face" data-act="char" title="Change character">
+        <div class="ofc-frame">${portrait(s.p)}</div></button>
+      <div class="ofc-bname" data-act="open" title="Open in Today">${esc(s.p.name)}</div>
+      <button class="ofc-bst" data-act="status" aria-pressed="${s.ooo}"
+        title="Tap to mark ${s.ooo?'back in':'out of office'}"><i></i><b>${s.ooo?'OOO':'WORKING'}</b></button>
+    </div>`).join('');
+}
+function headHTML(){
   const n=S.filter(s=>!s.ooo).length, out=S.length-n;
-  $('#main').innerHTML=`
+  return `${n} in the office${out?` · ${out} out`:''}`;
+}
+/* who is out can change from Today, and that is not worth a rebuild */
+function refresh(){
+  const away=new Set(DB.updates.filter(u=>u.date===D.today()&&u.status==='ooo').map(u=>u.personId));
+  S.forEach(s=>{s.ooo=away.has(s.p.id)});
+  $('.ofc-rail').innerHTML=railHTML();
+  $('#ofccount').textContent=headHTML();
+}
+function visible(v){ shown=v; }
+function show(){
+  if(mounted&&castOf()===cast)return refresh();
+  mount();
+}
+function mount(){
+  build(); cast=castOf(); mounted=true;
+  $('#ofc').innerHTML=`
   <div class="glass card ofc-wrap">
     <div class="ofc-bar">
       <span class="ofc-clock" id="ofcclk">--:--</span>
@@ -2542,21 +2615,15 @@ function show(){
         <button class="ofc-jb" data-find="chat">Talking</button>
       </span>
       <div class="sp"></div>
-      <span class="sub">${n} in the office${out?` · ${out} out`:''}</span>
+      <button class="ofc-light" id="ofclight" aria-pressed="false"
+        title="Turn the office lights on or off"><i></i><b></b></button>
+      <span class="sub" id="ofccount">${headHTML()}</span>
     </div>
-    <div class="ofc-board" id="ofcboard" style="background-image:url(${ART}office.webp)">
+    <div class="ofc-board" id="ofcboard" style="background-image:var(--plate)">
       <div class="ofc-wc"><i class="hh"></i><i class="mm"></i></div>
     </div>
   </div>
-  <div class="ofc-rail">${S.map(s=>`
-    <div class="ofc-badge${s.ooo?' out':''}" data-p="${s.p.id}">
-      <div class="ofc-bhd"><span>ID</span><span>${pad(s.i+1)}</span></div>
-      <button class="ofc-face" data-act="char" title="Change character">
-        <div class="ofc-frame">${portrait(s.p)}</div></button>
-      <div class="ofc-bname" data-act="open" title="Open in Today">${esc(s.p.name)}</div>
-      <button class="ofc-bst" data-act="status" aria-pressed="${s.ooo}"
-        title="Tap to mark ${s.ooo?'back in':'out of office'}"><i></i><b>${s.ooo?'OOO':'WORKING'}</b></button>
-    </div>`).join('')}</div>`;
+  <div class="ofc-rail">${railHTML()}</div>`;
 
   board=$('#ofcboard'); clk=$('#ofcclk'); ph=$('#ofcph');
   hh=$('.ofc-wc .hh'); mm=$('.ofc-wc .mm');
@@ -2586,7 +2653,7 @@ function show(){
     const el=document.createElement('div');
     el.className='ofc-chair';
     el.style.cssText=`left:${c.x*100}%;top:${c.y*100}%;width:${c.w*100}%;height:${c.h*100}%;`+
-      `background-image:url(${ART}office.webp);`+
+      `background-image:var(--plate);`+
       `background-size:${(100/c.w).toFixed(3)}% ${(100/c.h).toFixed(3)}%;`+
       `background-position:${(c.x/(1-c.w)*100).toFixed(3)}% ${(c.y/(1-c.h)*100).toFixed(3)}%;`+
       `clip-path:inset(${(c.clip*100).toFixed(1)}% 0 0 0);`+
@@ -2594,6 +2661,8 @@ function show(){
     board.appendChild(el);
     return el;
   });
+  $('#ofclight').onclick=()=>setLights(!LIT);
+  applyLights();
   $('#ofcjump').onclick=e=>{
     const b=e.target.closest('.ofc-jb'); if(!b)return;
     $$('#ofcjump .ofc-jb').forEach(x=>x.classList.remove('on'));
@@ -2623,7 +2692,8 @@ function goToPerson(pid){
   const f=$$(`#main tr[data-p="${pid}"] .c-tk`)[0];
   if(f){f.scrollIntoView({block:'center',behavior:'smooth'});setTimeout(()=>f.focus(),260)}
 }
-return{show,stop,build,wantOf,anchorFor,state:()=>S,setSeed:v=>{daySeed=v;cache.key=''},
+return{show,stop,visible,build,wantOf,anchorFor,state:()=>S,setSeed:v=>{daySeed=v;cache.key=''},
+       lights:on=>setLights(on),lit:()=>LIT,
        phaseAt,DAY,bfs};   // bfs is out here so a harness can check the route spread
 })();
 
