@@ -99,9 +99,12 @@ body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:15p
 .ch h2::before{content:"";width:4px;height:15px;border-radius:1px;background:var(--saffron);
   border:1px solid var(--edge);flex:0 0 auto}
 .cb{padding:16px}
-/* micro-labels borrow the badge's header type: mono, small, wide, uppercase */
+/* Micro-labels borrow the ID badge's header type, which is the app's own sans — small, wide,
+   uppercase. They were mono, which on Windows meant every column heading came out in Consolas
+   next to buttons in Segoe UI. The rule now is: words take the button's face, figures keep
+   --mono (the clock, day numbers, report counts, the recovery number). */
 .lbl,.secl,.pkh,.calhd span,th,.chead .pnm,.plangrid th,table.resp td::before{
-  font-family:var(--mono);font-weight:700;letter-spacing:.09em;text-transform:uppercase}
+  font-family:var(--sans);font-weight:700;letter-spacing:.09em;text-transform:uppercase}
 .sp{margin-left:auto}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .lbl{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--txt3)}
@@ -111,6 +114,10 @@ body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:15p
 .stack{display:flex;flex-direction:column;gap:16px}
 
 /* ---------------- controls ---------------- */
+/* A button does not inherit its font. Every one that set its own was fine; the bare icon
+   buttons - the row delete, + add, the bullet and number marks - fell back to the UA default
+   and rendered in Arial on every tab. */
+button{font-family:var(--sans)}
 /* ---------- iOS buttons ---------- */
 /* Pressing a paper button pushes it down into its own shadow rather than scaling —
    the offset shadow is the whole reason the badge reads as a physical object, so the
@@ -253,7 +260,7 @@ td.n,th.n{text-align:right;white-space:nowrap}
   font-weight:700;padding:5px 8px;border-radius:var(--rp2);white-space:nowrap;
   border:1.5px solid var(--edge)}
 .dot{width:6px;height:6px;border-radius:50%;flex:0 0 auto}
-.st{font:700 9.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;
+.st{font:700 9.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
   padding:5px 7px;border-radius:var(--rp2);white-space:nowrap;
   border:1.5px solid currentColor;display:inline-block}
 .st.planned{background:rgba(64,200,224,.16);color:var(--grey)}
@@ -266,7 +273,7 @@ td.n,th.n{text-align:right;white-space:nowrap}
 /* the ID badge frames a portrait in ink on paper; an initial gets the same frame rather
    than one of ten fill colours, which is what made the name column read as confetti */
 .av{width:28px;height:28px;border-radius:var(--rp2);flex:0 0 auto;display:grid;place-items:center;
-  font-size:11px;font-weight:700;letter-spacing:.02em;font-family:var(--mono);
+  font-size:11px;font-weight:700;letter-spacing:.02em;font-family:var(--sans);
   background:var(--paper2);color:var(--txt);border:1.5px solid var(--edge)}
 .nm{display:flex;align-items:center;gap:9px;flex-wrap:nowrap}
 /* stacked cards on phones */
@@ -390,9 +397,9 @@ td.n,th.n{text-align:right;white-space:nowrap}
   animation:badgein .72s cubic-bezier(.24,.9,.28,1.06) both}
 .lockcard::before{content:'DEVSAMOSA';position:absolute;left:0;right:0;top:0;height:32px;
   background:var(--saffron);border-bottom:var(--pbw) solid var(--edge);
-  font:700 9px/32px var(--mono);letter-spacing:.24em;color:#3a2f14;text-align:left;text-indent:14px}
+  font:700 9px/32px var(--sans);letter-spacing:.24em;color:#3a2f14;text-align:left;text-indent:14px}
 .lockcard::after{content:'ACCESS';position:absolute;right:14px;top:0;
-  font:700 9px/32px var(--mono);letter-spacing:.18em;color:#3a2f14}
+  font:700 9px/32px var(--sans);letter-spacing:.18em;color:#3a2f14}
 @keyframes badgein{
   0%{opacity:0;transform:translateY(-34px) rotate(-7deg)}
   55%{opacity:1;transform:translateY(3px) rotate(2.2deg)}
@@ -531,8 +538,15 @@ td.n,th.n{text-align:right;white-space:nowrap}
 .ofc-spr{position:absolute;inset:0;background-repeat:no-repeat;image-rendering:pixelated;
   background-image:var(--sheet);background-size:400% 600%;
   background-position:calc(var(--cx,0) * 33.3333%) calc(var(--cy,4) * 20%)}
-.ofc-p.walk .ofc-spr{animation:ofcwalk var(--wd,.58s) steps(4) infinite}
+/* The four drawn frames differ by about two pixels of stride, and a person renders 41px wide
+   on a laptop — so the cycle was running and reading as a still. The bob is a rendered pixel
+   rather than a drawn one: it survives the scale, and it is what makes walking legible at this
+   size without redrawing seventeen sheets. steps(2) over -2px lands on 0 and -1px, twice a
+   stride. */
+.ofc-p.walk .ofc-spr{animation:ofcwalk var(--wd,.58s) steps(4) infinite,
+  ofcbob calc(var(--wd,.58s) / 2) steps(2) infinite}
 @keyframes ofcwalk{from{background-position-x:0%}to{background-position-x:133.3333%}}
+@keyframes ofcbob{from{transform:translateY(0)}to{transform:translateY(-2px)}}
 /* a little desk nameplate rather than a chat bubble */
 .ofc-tag{position:absolute;left:50%;top:98%;transform:translateX(-50%);white-space:nowrap;
   font:700 7.5px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.7px;text-transform:uppercase;
@@ -631,7 +645,7 @@ td.n,th.n{text-align:right;white-space:nowrap}
   background-size:597.33% 1152%;background-position:4.95% 73.384%}
 .ofc-bname{padding:6px 5px 2px;font:700 11px/1.15 var(--sans);color:#22201e;text-align:center;
   cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ofc-bpr{padding:1px 6px 3px;font:700 7px/1.25 ui-monospace,Menlo,Consolas,monospace;
+.ofc-bpr{padding:1px 6px 3px;font:700 7px/1.25 var(--sans);
   letter-spacing:.05em;text-transform:uppercase;color:#6f6555;text-align:center;
   display:flex;align-items:center;justify-content:center;gap:3px;cursor:pointer;
   white-space:nowrap;overflow:hidden}
@@ -641,10 +655,12 @@ td.n,th.n{text-align:right;white-space:nowrap}
   border-top:2px dashed #d8cfb6;display:flex;align-items:center;justify-content:center;gap:5px;
   cursor:pointer;font-family:var(--sans)}
 .ofc-bst i{width:6px;height:6px;border-radius:50%;background:var(--green);display:block}
-/* somebody on the roster but not on the board: they have a desk and a card, but there is no
-   row in Today to mark them out of office, so the line is printed rather than chosen */
-.ofc-bst.gst{cursor:default;color:#8a8069;font:700 8.5px/1 var(--sans);letter-spacing:.6px}
-.ofc-bst.gst i{background:#c2b7a0}
+/* Somebody on the roster but not on the board: they have a desk and a card, but there is no
+   row in Today to mark them out of office, so the line is printed rather than chosen. It still
+   has to read as the same line — same words, same green, same width. It used to say IN OFFICE
+   in grey, which named a state nothing else in the app uses and, being two words longer than
+   WORKING, was the one line on the rail wide enough to touch both edges of a phone-sized card. */
+.ofc-bst.gst{cursor:default;color:var(--green);font:700 8.5px/1 var(--sans);letter-spacing:.6px}
 .ofc-face.gst{cursor:default}
 /* the field rules further up give every select a box, a chevron and width:100%; on a 104px
    badge it has to read as the printed line it replaced, so all of that is undone here */
@@ -655,7 +671,7 @@ td.n,th.n{text-align:right;white-space:nowrap}
 .ofc-bsel:focus{box-shadow:none}
 .ofc-bsel:focus-visible{outline:2px solid var(--saffron);outline-offset:2px;border-radius:3px}
 .ofc-badge.out .ofc-bst i{background:var(--purple)}
-.ofc-badge.out .ofc-bsel{color:var(--purple)}
+.ofc-badge.out .ofc-bsel,.ofc-badge.out .ofc-bst.gst{color:var(--purple)}
 /* character picker */
 .ofc-pick{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
 .ofc-pk{aspect-ratio:2/3;border:2px solid var(--hair);border-radius:9px;background-color:var(--fill);
@@ -696,10 +712,14 @@ td.n,th.n{text-align:right;white-space:nowrap}
   .ofc-rail{padding:8px 2px 3px;gap:8px}
   .ofc-bhd{font-size:6.5px;letter-spacing:.6px;padding:2px 5px}
   .ofc-bname{font-size:10px;padding:3px 4px 0}
-  .ofc-bst{margin:1px 5px 4px;padding:3px 0}
+  /* The select carries a 28px tap target here, which makes its line 36px tall. The printed
+     line has to reserve the same, or the four roster cards stop 20px short of the rest of the
+     rail and the row reads as ragged along the bottom. One number, both variants. */
+  .ofc-bst{margin:1px 5px 4px;padding:3px 0;min-height:36px}
   /* A select opens a picker on iOS rather than a keyboard, so it does not trigger the
      zoom-on-focus that the blanket 16px rule further up exists to prevent. */
-  .ofc-bsel{font-size:9px!important;letter-spacing:.3px;min-height:28px}
+  .ofc-bsel,.ofc-bst.gst{font-size:9px!important;letter-spacing:.3px}
+  .ofc-bsel{min-height:28px}
   .ofc-bpr{font-size:6px;letter-spacing:.02em;padding:1px 4px 2px}
   .ofc-bst i{width:5px;height:5px}
   /* Six controls, no room: the clock, phase and light switch hold one line and the jump
@@ -718,11 +738,18 @@ td.n,th.n{text-align:right;white-space:nowrap}
   .ofc-jump{order:5;flex:1 0 100%;overflow-x:auto;scrollbar-width:none;
     padding:2px 2px 3px;margin:-2px -2px -3px}
   .ofc-jump::-webkit-scrollbar{display:none}
+  /* The five buttons come to 350px. That overflows a 360px phone and scrolls, but on a 430px
+     one it left 44px of dead space at the right and the row read as shoved to the left. Grow
+     to fill, never shrink: wide screens close the gap, narrow ones still scroll. */
+  .ofc-jump .ofc-jb{flex:1 0 auto}
   .ofc-jb,.ofc-light{min-height:30px;font-size:11.5px;padding:0 10px}
   .ofc-clock{font-size:19px}
 }
-/* Critters off in the ••• menu stops the office moving too */
-.nocrit .ofc-p .ofc-spr,.nocrit .ofc-scr i{animation:none!important}
+/* Critters off in the ••• menu stops the office moving too. :root, not a bare .nocrit: the
+   reduced-motion block further down re-enables the walk at the same specificity and later in
+   the file, so without the extra class here the switch stopped nothing on a machine asking
+   for reduced motion — which is most of them. */
+:root.nocrit .ofc-p .ofc-spr,:root.nocrit .ofc-scr i{animation:none!important}
 
 /* ---- critters ---- */
 .critter{color:var(--saffron);pointer-events:none}
@@ -944,7 +971,7 @@ th.freecol{color:var(--txt3)}
 .acts .bul:hover,.acts .num:hover{color:var(--blue);background:rgba(10,132,255,.12)}
 
 /* ---- status colours ---- */
-select.c-st{font-family:var(--mono);font-weight:700;font-size:10px;letter-spacing:.06em;
+select.c-st{font-family:var(--sans);font-weight:700;font-size:10px;letter-spacing:.06em;
   text-transform:uppercase;text-align:center;border-radius:var(--rp2);padding:5px 6px;
   border:1.5px solid currentColor;background-image:none;text-align-last:center}
 .gt select.c-st.s-planned{background-color:rgba(64,200,224,.18);color:var(--teal)}
@@ -1103,6 +1130,15 @@ header{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
 .gt .c-tk{min-width:170px}
 .gt .c-es,.gt .c-sp{width:62px;text-align:right}
 .gt select.c-pr{min-width:118px}
+/* Seven status words share one box and "not assigned" is the long one. It inherits 14px from
+   the rule above, wants 117px there and was being clipped to NOT ASSIGN, so give it the room.
+   On a phone the blanket 16px anti-zoom floor made the slab wider than the developer's name
+   beside it and it still did not fit — and a select opens a picker on iOS rather than a
+   keyboard, so it never triggered the zoom that floor exists to prevent. */
+.gt select.c-st{min-width:138px}
+@media(max-width:860px){
+  .gt select.c-st,.dense select.c-st,.sheet select.c-st{font-size:13px!important;min-width:132px}
+}
 .gt tr.sub td:first-child{opacity:0}
 @media(max-width:720px){.gt tr.sub td:first-child{opacity:1}}
 .pbar{width:104px;height:6px;border-radius:2px;background:var(--paper2);
@@ -1123,7 +1159,8 @@ header{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
    asks for reduced motion. Windows with "show animations" off reports it, and answering that by
    freezing them reads as teleporting. Critters in the ••• menu is the switch for this instead. */
 @media (prefers-reduced-motion:reduce){
-  .ofc-p.walk .ofc-spr{animation:ofcwalk var(--wd,.58s) steps(4) infinite!important}
+  .ofc-p.walk .ofc-spr{animation:ofcwalk var(--wd,.58s) steps(4) infinite,
+    ofcbob calc(var(--wd,.58s) / 2) steps(2) infinite!important}
   .ofc-scr i{animation:ofctype 2.4s steps(5) infinite!important}
 }
 @media print{#bg,nav,.hbtns,.ticker,button{display:none!important}
@@ -3058,7 +3095,7 @@ function railHTML(){
         return `<div class="ofc-bpr${pr?'':' none'}" data-act="open" title="${pr?esc(pr.name):'No project yet'}">
           ${pr?`<i style="background:${pr.color}"></i>${esc(pr.name)}`:'—'}</div>`;})()}
       ${(s.p.guest||!ADMIN)
-        ?`<div class="ofc-bst gst" title="${s.p.guest?'On the roster, not on the board':'Read-only'}"><i></i>${s.p.guest?'IN OFFICE':(s.ooo?'OUT OF OFFICE':'WORKING')}</div>`
+        ?`<div class="ofc-bst gst" title="${s.p.guest?'On the roster, not on the board — add them in Team to set a status':'Read-only'}"><i></i>${s.ooo?'OOO':'WORKING'}</div>`
         :`<label class="ofc-bst" title="Working, or out of office today"><i></i>
         <select class="ofc-bsel" data-act="status" aria-label="${esc(s.p.name)} today">
           <option value="in"${s.ooo?'':' selected'}>WORKING</option>
