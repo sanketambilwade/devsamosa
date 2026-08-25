@@ -2254,6 +2254,12 @@ const DARKAT=1020;                           // 5pm: the lights go off on their 
 const closed=m=>m<OPEN||m>=CLOSE;
 const LUNCHAT=6, LUNCHMIN=10, LUNCHMAX=15;   // how many eat at once, and for how long
 const phaseAt=m=>DAY.find(d=>m>=d.t[0]&&m<d.t[1])||null;
+const JUMPS=(()=>{const seen=new Set();
+  return DAY.filter(d=>!seen.has(d.n)&&seen.add(d.n)).map(d=>{
+    const len=d.t[1]-d.t[0];
+    return{n:d.n,lo:+(d.t[0]+Math.min(6,len*0.25)).toFixed(1),
+              hi:+(d.t[1]-Math.min(3,len*0.1)).toFixed(1)};
+  });})();
 
 /* Nothing here uses Math.random: every choice is a hash of (person, occasion, day), so a
    standup keeps its seating for as long as it runs and tomorrow's is a different one. */
@@ -2750,9 +2756,8 @@ function mount(){
       <span class="ofc-phase" id="ofcph"></span>
       <span class="ofc-jump" id="ofcjump">
         <button class="ofc-jb on" data-now="1">Now</button>
-        <button class="ofc-jb" data-lo="577.5" data-hi="583">Standup</button>
-        <button class="ofc-jb" data-lo="666" data-hi="678">Tea</button>
-        <button class="ofc-jb" data-lo="795" data-hi="828">Lunch</button>
+        ${JUMPS.map(j=>`<button class="ofc-jb" data-lo="${j.lo}" data-hi="${j.hi}"
+          title="Jump to ${j.n}">${j.n}</button>`).join('')}
         <button class="ofc-jb" data-find="chat">Talking</button>
       </span>
       <div class="sp"></div>
