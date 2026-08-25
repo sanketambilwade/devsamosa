@@ -569,7 +569,23 @@ td.n,th.n{text-align:right;white-space:nowrap}
   image-rendering:pixelated;cursor:pointer;padding:0}
 .ofc-pk.on{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue)}
 @media(max-width:720px){
-  .ofc-badge{flex-basis:92px;width:92px}
+  /* The badge holds a status control now, and the rule that stops iOS zooming a focused
+     field forces every select to 16px — so the card widens to hold it rather than clipping
+     "WORKING" in half. */
+  .ofc-badge{flex-basis:114px;width:114px}
+  .ofc-bsel{letter-spacing:.2px;min-height:30px}
+  .ofc-bpr{font-size:6.5px;letter-spacing:.03em}
+  /* Six controls, no room: the clock, phase and light switch hold one line and the jump
+     buttons get their own scrolling row. The light switch was landing 80px past the right
+     edge, which made it unreachable rather than merely cramped. */
+  .ofc-bar{flex-wrap:wrap;gap:8px;padding:2px 4px 8px}
+  .ofc-bar .sp{display:none}
+  .ofc-phase{white-space:nowrap;font-size:10px;padding:6px 8px;order:2}
+  .ofc-light{order:3;margin-left:auto;min-height:32px}
+  #ofccount{order:4;font-size:11px}
+  .ofc-jump{order:5;flex:1 0 100%;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .ofc-jump::-webkit-scrollbar{display:none}
+  .ofc-jb{flex:0 0 auto;min-height:32px;padding:0 12px;display:inline-flex;align-items:center}
   .ofc-clock{font-size:19px}
   .ofc-board{width:100%}
   /* at phone size a sprite is about 12px wide and its name tag is three times that, so the
@@ -636,7 +652,9 @@ button,.chip,.cday,.mi,.pki,.bk,.seg button{touch-action:manipulation}
   .sheet .pcell{padding-bottom:8px}
   .gt input,.gt select,.gt textarea{background-color:var(--field);border-color:var(--hair)}
   .tcell textarea{min-height:44px}
-  select.c-st{width:auto;min-width:130px}
+  /* the anti-zoom 16px floor makes this the widest thing on the card, so cap it or the
+     status slab reads as more important than the developer's name beside it */
+  select.c-st{width:auto;min-width:118px;max-width:150px}
 
   /* plan: keep names visible, let the days scroll */
   .pnm{width:92px;flex:0 0 92px;padding:8px;font-size:12.5px}
