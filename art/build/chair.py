@@ -85,5 +85,16 @@ for i in range(FAR[3]-FAR[1]):
     med=tuple(int(statistics.median([c[k] for c in row])) for k in range(3))
     for x in range(BODY.start,BODY.stop):
         if fp[x,i][3]>128: fp[x,i]=med+(255,)
+# The base is the other half of the tell. Seen from behind it is a wide bar across the bottom,
+# because it stands between the backrest and the camera; seen from the front the seat is what is
+# nearest and the bar is hidden behind it, leaving only the two legs poking out at the corners —
+# which is exactly what shows under the far meeting chairs before the table cuts them off. Carve
+# the bar back to those legs, or the chair reads as facing away however the cushion is shaded.
+BAR=FAR[3]-FAR[1]                                   # first row below the seat
+cover=lambda y: sum(1 for x in range(w2) if fp[x,y][3]>128)
+LEGROW=next(y for y in range(BAR,h2) if cover(y) < w2*0.6)   # where the bar breaks into legs
+for y in range(BAR,LEGROW):
+    for x in range(w2):
+        if fp[x,LEGROW][3]<=128: fp[x,y]=(0,0,0,0)
 front.save(os.path.join(HERE,'chair-front.png'))
 print('saved chair-front.png (rows 0..%d rebuilt from the far meeting chair)'%(FAR[3]-FAR[1]-1))
