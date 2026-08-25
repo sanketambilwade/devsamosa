@@ -1467,10 +1467,12 @@ async function ghUnlockAny(pass){
   if(GHENC){try{return{cfg:await ghUnlock(pass),role:'admin'}}catch(e){}}
   if(GHVIEW){try{
     const cfg=await ghOpen(pass,GHVIEW);
-    /* Two shapes of guest. With a read-only token it is the real board, read-only. With
-       {demo:1} and no token at all it is the sample board and nothing is ever fetched — which
-       needs no second GitHub token, and is the one you can hand to a stranger. */
-    if(cfg.demo||(cfg.owner&&cfg.repo&&cfg.token))return{cfg,role:'viewer'};
+    /* A guest only ever gets the sample board: the blob carries {demo:1} and no token at all,
+       so there is nothing in it to lift out of the published page and nothing to set up on
+       GitHub. Sealing a real read-only token under a second password was built and then taken
+       out again — it cost a second fine-grained PAT to make and to renew, for a trial audience
+       better served by an invented team than by a real one. */
+    if(cfg.demo)return{cfg,role:'viewer'};
   }catch(e){}}
   return null;
 }
@@ -1757,7 +1759,7 @@ function ghTeamLock(){
       You have opened this inside a chat app. It will forget your PIN every time you
       close it — tap the <b>•••</b> menu and choose <b>Open in browser</b> first.</p>`:''}
     <p class="hint" style="margin-top:14px">Everyone on the team uses the same password and
-      sees the same board.${GHVIEW?' A guest password shows the board without changing it.':''}
+      sees the same board.${GHVIEW?' A guest password opens a sample board to look round.':''}
       <a href="#" id="own">Use this device only</a></p>
   </div>`;
   const fail=m=>{$('#err').textContent=m;$('#lc').classList.remove('shake');
@@ -1776,15 +1778,10 @@ function ghTeamLock(){
     const r=await ghUnlockAny(pw);
     if(!r){$('#go').disabled=false;return fail('That password is not right')}
     if(r.role==='admin')return ghPinNew(r.cfg);
-    if(r.cfg.demo)return demoStart();
     /* A guest is a visitor: no PIN, nothing sealed into their browser, and the session goes
        when the tab does. They retype the password next time, which is what you want from
        something you hand out for a trial. */
-    Object.assign(GH,{owner:r.cfg.owner,repo:r.cfg.repo,
-      branch:r.cfg.branch||'main',token:r.cfg.token});
-    ghMemSave({...r.cfg,role:'viewer'});
-    await setSession('guest','viewer'); ADMIN=false;
-    await ghStart();
+    return demoStart();
   };
   setTimeout(()=>{const f=$('#tp');f&&f.focus()},240);
 }
@@ -4853,16 +4850,15 @@ function seed(){
     if(GHENC){
       STORE.mode='github';STORE.label='Team repo';
       const live=ghMemLoad();
-      /* Same app session — a refresh should not ask for anything. The role rides along with
-         it: without that a guest who pressed reload came back as an admin, which is the sort
-         of hole that only shows up once somebody actually uses the guest link. */
+      /* Same app session — a refresh should not ask for anything. The demo check has to come
+         first: without it a guest who pressed reload fell through to the token branch and came
+         back an admin, which is the sort of hole that only shows up once somebody actually
+         uses the guest link. */
       if(live&&live.demo){await demoStart();return}
       if(live&&live.token){
-        const viewer=live.role==='viewer';
         Object.assign(GH,{owner:live.owner,repo:live.repo,
           branch:live.branch||'main',token:live.token});
-        await setSession(viewer?'guest':'team',viewer?'viewer':'admin');
-        ADMIN=!viewer;
+        await setSession('team','admin');ADMIN=true;
         await ghStart();
         return;
       }

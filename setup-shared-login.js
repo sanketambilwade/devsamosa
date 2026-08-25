@@ -5,17 +5,12 @@
  * Makes up to two credentials and writes both into index.html:
  *
  *   TEAM password   ->  GHENC   ->  a token that can write.  Full access.
- *   GUEST password  ->  GHVIEW  ->  either of two things:
+ *   GUEST password  ->  GHVIEW  ->  {demo:1}, and no token at all.
  *
- *     a) {demo:1}, no token at all. The guest gets the built-in sample board:
- *        invented people, invented projects, held in memory. Your repository is
- *        never called and your token is never decrypted, so this one is safe to
- *        hand to anybody. Nothing to set up on GitHub.
- *
- *     b) a second, READ-ONLY token. The guest sees your real board and cannot
- *        change it — and neither can anybody who lifts that token out of the
- *        published page, because GitHub refuses the write. This script checks
- *        that the token really cannot push before it will use it.
+ * A guest gets the built-in sample board: invented people, invented projects,
+ * held in memory and read-only. Your repository is never called and your token
+ * is never decrypted, so the guest password is safe to hand to anybody and there
+ * is nothing to set up on GitHub for it.
  *
  * Everything happens on this machine: the tokens are never sent anywhere except
  * to github.com to be verified, and the passwords are never stored at all.
@@ -115,47 +110,16 @@ async function main() {
   console.log(`ok — ${info.full_name}, ${info.private ? 'private' : 'PUBLIC (!)'}`);
   if (!info.private) console.log('  WARNING: that repository is public. Anyone can already read the board.');
 
-  /* The guest half. Optional, and there are two kinds — see the header. */
+  /* The guest half. One kind: the sample board. No token, nothing to set up. */
   console.log('\nGuest sign-in (optional). A second password you can hand to someone for a');
-  console.log('trial. They can read and explore; they cannot change anything.');
-  console.log('\n  1  Sample board  — a built-in demo team. No token, nothing to set up,');
-  console.log('                     your real board is never fetched. Safe for anyone.');
-  console.log('  2  Your real board, read-only — needs a second GitHub token with');
-  console.log('                     Contents: Read-only on this repository.');
-  const vMode = (await ask('\nChoose 1, 2, or Enter for no guest sign-in: ', false)).trim();
-  if (vMode && vMode !== '1' && vMode !== '2') {
-    console.error('\nType 1, 2, or nothing.'); closeInput(); process.exit(1);
+  console.log('trial. It opens a built-in sample board — invented people, invented projects,');
+  console.log('read-only, held in memory. Your board is never fetched and your token is never');
+  console.log('decrypted, so it is safe to give to anybody.');
+  const vAns = (await ask('\nAdd a guest password? [Y/n]: ', false)).trim().toLowerCase();
+  if (vAns && !/^(y|yes|n|no)$/.test(vAns)) {
+    console.error('\nAnswer y or n.'); closeInput(); process.exit(1);
   }
-  const demo = vMode === '1';
-  let vToken = '';
-  if (vMode === '2') {
-    vToken = await ask('Read-only token (input hidden): ', true);
-    if (vToken.length < 20) {
-      console.error('\nThat token looks too short.'); closeInput(); process.exit(1);
-    }
-    if (vToken === token) {
-      console.error('\nThat is the same token as the team one. The guest token has to be a');
-      console.error('separate, read-only one, or a guest can write.');
-      closeInput(); process.exit(1);
-    }
-  }
-  if (vToken) {
-    process.stdout.write('Checking the read-only token... ');
-    const vr = await fetch(`https://api.github.com/repos/${m[1]}/${m[2]}`, {
-      headers: { Authorization: 'Bearer ' + vToken, Accept: 'application/vnd.github+json' },
-    });
-    if (!vr.ok) {
-      console.error(`failed (HTTP ${vr.status}). It cannot even read the repository.`);
-      closeInput(); process.exit(1);
-    }
-    const vi = await vr.json();
-    if (vi.permissions && vi.permissions.push) {
-      console.error('failed.\nThat token CAN write. Give it Contents: Read-only, or a guest is');
-      console.error('not a guest. Re-run once you have made one.');
-      closeInput(); process.exit(1);
-    }
-    console.log('ok — reads, cannot write.');
-  }
+  const demo = vAns !== 'n' && vAns !== 'no';
 
   const suggested = makePass();
   console.log(`\nSuggested team password:  ${suggested}`);
@@ -170,7 +134,7 @@ async function main() {
   }
 
   let vPass = '';
-  if (vToken || demo) {
+  if (demo) {
     const vSug = makePass();
     console.log(`\nSuggested guest password:  ${vSug}`);
     const vTyped = await ask('Press Enter to use it, or type your own: ', false);
@@ -223,19 +187,17 @@ async function main() {
   }
   let out = html.replace(/^const GHENC=.*;$/m,
     ('const GHENC=' + seal(pass, token) + ';').replace(/\$/g, '$$$$'));
-  /* {demo:1} carries no token and no repository: it is a flag, sealed the same way so that
-     getting the password wrong still fails the same way. */
-  const guestBlob = demo ? sealRaw(vPass, { demo: 1 })
-    : vToken ? seal(vPass, vToken) : 'null';
+  /* {demo:1} carries no token and no repository: it is a flag, sealed the same way as the team
+     blob so that getting the password wrong fails the same way — the decrypt throws. */
+  const guestBlob = demo ? sealRaw(vPass, { demo: 1 }) : 'null';
   out = out.replace(/^const GHVIEW=.*;$/m,
     ('const GHVIEW=' + guestBlob + ';').replace(/\$/g, '$$$$'));
   fs.writeFileSync(FILE, out);
 
   /* never ship a plaintext token by accident */
   const after = fs.readFileSync(FILE, 'utf8');
-  const leaked = after.includes(token) ? 'team' : (vToken && after.includes(vToken)) ? 'guest' : '';
-  if (leaked) {
-    console.error(`\nABORT: the raw ${leaked} token ended up in index.html. Restoring.`);
+  if (after.includes(token)) {
+    console.error('\nABORT: the raw token ended up in index.html. Restoring.');
     fs.writeFileSync(FILE, html);
     closeInput(); process.exit(1);
   }
@@ -244,7 +206,6 @@ async function main() {
   console.log('index.html updated. Both tokens are encrypted; neither plaintext is in the file.');
   console.log('\n  TEAM PASSWORD:   ' + pass + '   (full access)');
   if (demo) console.log('  GUEST PASSWORD:  ' + vPass + '   (sample board, not your data)');
-  else if (vToken) console.log('  GUEST PASSWORD:  ' + vPass + '   (your board, read-only)');
   else console.log('  GUEST PASSWORD:  none — guest sign-in is off in this build');
   console.log('\nSave those somewhere safe. They are not stored anywhere — if one is lost,');
   console.log('run this script again. Changing a password invalidates every device PIN, so');
