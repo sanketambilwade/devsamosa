@@ -599,7 +599,12 @@ td.n,th.n{text-align:right;white-space:nowrap}
 .ofc-face{border:0;background:none;padding:7px 0 0;cursor:pointer;display:flex;justify-content:center}
 .ofc-frame{border:2px solid #22201e;width:66px;height:77px;overflow:hidden;line-height:0}
 .ofc-frame{background:#efe6d2}
-.ofc-pph{display:block;width:66px;height:77px;background-repeat:no-repeat;image-rendering:pixelated}
+/* Head and shoulders out of the standing-front cell (column 0, row 4) of a 4x6 sheet: source
+   x 21.1, y 772, 85.7x100 of 512x1152. As percentages it is the same crop at any frame size -
+   size = sheet/crop, position = origin/(sheet-crop) - so the phone and the desktop card share
+   one set of numbers instead of two that have to be kept in step by hand. */
+.ofc-pph{display:block;width:66px;height:77px;background-repeat:no-repeat;image-rendering:pixelated;
+  background-size:597.33% 1152%;background-position:4.95% 73.384%}
 .ofc-bname{padding:6px 5px 2px;font:700 11px/1.15 var(--sans);color:#22201e;text-align:center;
   cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ofc-bpr{padding:1px 6px 3px;font:700 7px/1.25 ui-monospace,Menlo,Consolas,monospace;
@@ -663,7 +668,7 @@ td.n,th.n{text-align:right;white-space:nowrap}
   .ofc-badge{flex-basis:76px;width:76px}
   .ofc-face{padding-top:5px}
   .ofc-frame{width:44px;height:51px}
-  .ofc-pph{width:44px;height:51px;background-size:262.8px 591.3px;background-position:-10.8px -396.3px}
+  .ofc-pph{width:44px;height:51px}
   .ofc-rail{padding:8px 2px 3px;gap:8px}
   .ofc-bhd{font-size:6.5px;letter-spacing:.6px;padding:2px 5px}
   .ofc-bname{font-size:10px;padding:3px 4px 0}
@@ -678,8 +683,12 @@ td.n,th.n{text-align:right;white-space:nowrap}
      edge, which made it unreachable rather than merely cramped. */
   .ofc-bar{gap:7px;padding:2px 2px 7px}
   .ofc-bar .sp{display:none}
-  .ofc-light{order:3;margin-left:auto}
-  #ofccount{order:4;font-size:11px;flex:0 0 auto}
+  /* The head count sat to the right of the light switch, which left the switch stranded in the
+     middle of the line with text after it. Count takes the middle and the switch goes hard
+     right, where a control belongs. */
+  #ofccount{order:2;font-size:11px;flex:1 1 auto;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ofc-light{order:3;flex:0 0 auto;margin-left:0}
   /* the jump row scrolls rather than wrapping: five buttons never fit 360px, and a second
      wrapped line costs the floor its height back */
   .ofc-jump{order:5;flex:1 0 100%;overflow-x:auto;scrollbar-width:none;
@@ -2745,11 +2754,11 @@ function build(){
    cards were inventing more. It crops the head straight out of the sprite sheet now, so the
    card is always the person standing at that desk. */
 function portrait(p){
-  /* crop head-and-shoulders out of the standing-front cell (column 0, row 4) */
-  const k=0.77, x=21.1, y=4*192+4;
-  return `<i class="ofc-pph" style="background-image:url(${ART}c${pad(spriteOf(p))}.png);
-    background-size:${(128*4*k).toFixed(1)}px ${(192*6*k).toFixed(1)}px;
-    background-position:${(-x*k).toFixed(1)}px ${(-y*k).toFixed(1)}px"></i>`;
+  /* Only the sheet. The crop itself lives in .ofc-pph as percentages, because it used to be
+     set here in pixels - and an inline style beats a media query, so the phone shrank the frame
+     to 44px and went on drawing the head at the 66px desktop scale inside it. Zoomed in and
+     cropped, on every card, only on a phone. */
+  return `<i class="ofc-pph" style="background-image:url(${ART}c${pad(spriteOf(p))}.png)"></i>`;
 }
 
 /* ---------- editing from the card ---------- */
