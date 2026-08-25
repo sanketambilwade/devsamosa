@@ -61,17 +61,25 @@ for (lx,ly) in PLATES:
 
 # ---- 4. a meeting-room chair at every desk ----
 chair=Image.open(os.path.join(HERE,'chair.png')).convert('RGBA')
+# The manager is the one person who faces the room rather than a wall, so his chair is the one
+# that has to be the other way round: backrest away from us, seat toward us. See chair.py.
+chairF=Image.open(os.path.join(HERE,'chair-front.png')).convert('RGBA')
 CW,CH=chair.size
 seatpos=[]; chairrects=[]
 MGRTOP=165          # DEV 01 sits on the FAR side: chair bottom meets his desk's top edge (y=207)
 for i,(lx,ly) in enumerate(PLATES):
     ctop = MGRTOP if i==0 else ly-54
     cx = lx - CW//2
-    out.paste(chair,(cx,ctop),chair)
+    ch = chairF if i==0 else chair
+    out.paste(ch,(cx,ctop),ch)
     chairrects.append((cx,ctop,cx+CW,ctop+CH))
-    # Sit low enough that the head clears the desk edge; the chair is redrawn in front of
-    # them by the app, so the backrest shows and the feet tuck under it.
-    seatpos.append((lx, ctop+47))          # sprite is anchored at the feet
+    # The app redraws the chair whole, in front of whoever is in it, so where they sit is
+    # really the question of how much of them clears the backrest. +27 leaves the head, the
+    # collar and the shoulders above it, which is what you see of someone at a desk from above;
+    # at +47 the backrest reached their ears and every desk was a dark smudge on a chair.
+    # The manager is the exception — he faces the room and his chair is behind him, so he keeps
+    # the low seat that puts him at his own desk rather than up on it.
+    seatpos.append((lx, ctop + (47 if i==0 else 27)))     # sprite is anchored at the feet
 print('chairs stamped:',len(seatpos))
 HANDOVER={'chairrects':chairrects,'seatpos':seatpos}
 

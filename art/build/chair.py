@@ -64,3 +64,26 @@ for y in range(ch*sc):
 chk.paste(out.resize((cw*sc,ch*sc),Image.NEAREST),(0,0),out.resize((cw*sc,ch*sc),Image.NEAREST))
 chk.save(os.path.join(HERE,'chair-preview.png'))
 print('saved chair.png and chair-preview.png')
+
+# ---------------------------------------------------------------------------------------------
+# The same chair the other way round, for the one desk whose occupant faces the room.
+#
+# There is no second chair sprite in the artwork to cut out — the meeting room's far row is this
+# same chair, and everything below its backrest is hidden behind the table. What differs from
+# above is only the vertical structure: seen from behind you get the backrest filling the block
+# with the castors under it, seen from in front you get the backrest as a band at the top and
+# then the seat. So take that structure row by row — the median of the far chair's own interior
+# columns, the trick the desks are rebuilt with in plate5.py — and lay it over this sprite's
+# body. Silhouette, outline and castors stay exactly as they are.
+import statistics
+FAR=(499,146,534,178)          # one far-side meeting chair, measured off the artwork
+front=out.copy(); fp=front.load()
+w2,h2=front.size
+BODY=slice(2,w2-2)             # interior, so the dark outline columns are left alone
+for i in range(FAR[3]-FAR[1]):
+    row=[px[x,FAR[1]+i] for x in range(FAR[0]+3,FAR[2]-3)]
+    med=tuple(int(statistics.median([c[k] for c in row])) for k in range(3))
+    for x in range(BODY.start,BODY.stop):
+        if fp[x,i][3]>128: fp[x,i]=med+(255,)
+front.save(os.path.join(HERE,'chair-front.png'))
+print('saved chair-front.png (rows 0..%d rebuilt from the far meeting chair)'%(FAR[3]-FAR[1]-1))

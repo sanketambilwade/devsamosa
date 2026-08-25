@@ -115,9 +115,14 @@ CLAIMED=[]      # every standing spot handed out, so no two places can share one
 
 # The 12 chairs around the table, measured off the art. y is where the feet go: at a chair on
 # the far side that is the table's top edge, at a near-side chair it is down by the castors.
-MEETCHAIRS=[(519,183),(572,183),(632,183),(685,183),(742,183),          # far side, facing down
-            (515,283),(570,283),(628,283),(685,283),(740,283),          # near side, facing up
-            (460,213),(791,213)]                                        # the two ends
+TABLETOP=179        # the meeting table's own top edge; the far row's legs disappear under it
+MEETCHAIRS=[(515,205),(570,205),(628,205),(685,205),(740,205),          # far side, facing down
+            (515,267),(570,267),(628,267),(685,267),(740,267),          # near side, facing up
+            (462,237),(794,238)]                                        # the two ends
+# Measured off the plate, not eyeballed: the first pass had them all a few pixels left of the
+# real chairs, so the redrawn backrest sat beside its occupant instead of round them.
+MEETNEAR=[(497,240,534,284),(552,240,589,284),(610,240,647,284),
+          (667,240,704,284),(722,240,759,284)]
 def standSpots(taken,limit=12):
     cand=[]
     for gy in range(ROOM[1]//CELL,ROOM[3]//CELL+1):
@@ -133,10 +138,16 @@ def standSpots(taken,limit=12):
         if len(out)>=limit: break
     return out
 taken=CLAIMED
-for x,y in MEETCHAIRS: taken.append(sbox(x,y))
-for i,a in enumerate(MEETCHAIRS):
-    for bb in MEETCHAIRS[i+1:]:
-        assert not hits(sbox(a[0],a[1],0),sbox(bb[0],bb[1],0)), ('chairs overlap',a,bb)
+def seatbox(i,pad=3):
+    x,y=MEETCHAIRS[i]; b=list(sbox(x,y,pad))
+    # the far row is drawn from behind the table and cut off at its edge, so the half of them
+    # that overlaps the near row is never on screen and must not count as a collision
+    if i<5: b[3]=min(b[3],TABLETOP)
+    return tuple(b)
+for i in range(len(MEETCHAIRS)): taken.append(seatbox(i))
+for i in range(len(MEETCHAIRS)):
+    for j in range(i+1,len(MEETCHAIRS)):
+        assert not hits(seatbox(i,0),seatbox(j,0)), ('chairs overlap',MEETCHAIRS[i],MEETCHAIRS[j])
 MEET=MEETCHAIRS+standSpots(taken)
 MEETFACE=(['front']*5)+(['back']*5)+['right','left']
 print('meeting places:',len(MEETCHAIRS),'chairs +',len(MEET)-len(MEETCHAIRS),'standing')
@@ -159,7 +170,11 @@ for i,(sx,sy) in enumerate(seatpos):
     e=entry(sx,sy,'seat%d'%i,face='front' if i==0 else 'back',sit=1)
     e['i']=i
     # trim the legs that would otherwise hang below the chair we draw in front of them
-    e['clip']=round((sy+3.1-(chairrects[i][3]))/78.1,4)
+    e['clip']=round(max(0,sy+3.1-chairrects[i][3])/78.1,4)
+    # and put the name plate under the chair rather than behind it. The plate is a child of the
+    # sprite, so it cannot be lifted out of its stacking context to sit above the chair — it has
+    # to be moved clear instead. Percent of the sprite box, which is why it goes past 100.
+    if i: e['tag']=round((chairrects[i][3]+5-(sy-74.98))/78.1*100,1)
     e['fixed']=1 if i==0 else 0          # the manager desk belongs to one person, or to nobody
     data['seats'].append(e)
 # Everyone heading for the coffee machine used to stand on the exact same pixel, so 5 people
@@ -186,8 +201,18 @@ for k,(x,y) in DEST.items():
     data['dest'][k]=e
 print('standing spots per destination:',{k:len(v['spots']) for k,v in data['dest'].items()})
 for j,(x,y) in enumerate(MEET):
-    if j<len(MEETFACE): data['meetSeats'].append(entry(x,y,'meet%d'%j,face=MEETFACE[j],sit=1))
-    else:               data['meetSeats'].append(entry(x,y,'meet%d'%j,look=(TCX,TCY)))
+    if j<len(MEETFACE): e=entry(x,y,'meet%d'%j,face=MEETFACE[j],sit=1)
+    else:               e=entry(x,y,'meet%d'%j,look=(TCX,TCY))
+    # The far five are drawn from behind the table, so trim them at its edge — otherwise they
+    # read as standing behind it rather than sitting at it. Same mechanism as a desk chair
+    # cropping the feet; doing it with an overlay instead would bury their name plates, which
+    # are children of the sprite and cannot escape its stacking context.
+    if j<5:
+        e['clip']=round((y+3.1-TABLETOP)/78.1,4)
+        e['tag']=round((TABLETOP+3-(y-74.98))/78.1*100,1)
+    if 5<=j<10:
+        e['tag']=round((MEETNEAR[j-5][3]+5-(y-74.98))/78.1*100,1)
+    data['meetSeats'].append(e)
 # The sofa seats three, on the cushions. Same handling as a desk chair: the anchor is the
 # furniture, and the walk stops at the floor beside it.
 SOFA=[(1304,549),(1347,549),(1390,549)]
@@ -211,16 +236,11 @@ print('conversation spots:',len(huddles),'groups of',[len(h) for h in huddles])
 # to us: then the backrest is between them and the camera. Somebody facing the room — the
 # manager at his own desk, the far side of the meeting table — sits in front of their chair, so
 # those are left alone. 'clip' is how much of the top to leave behind them.
-# Measured off the plate, not eyeballed: the first pass had them all a few pixels left of the
-# real chairs, so the redrawn backrest sat beside its occupant instead of round them.
-MEETNEAR=[(497,240,534,284),(552,240,589,284),(610,240,647,284),
-          (667,240,704,284),(722,240,759,284)]
-# 'clip' is how much of the chair's top to leave behind the person. Judged off screenshots at
-# .33 / .45 / .50 / .62: under about .6 the backrest swallows the torso and all that reads is a
-# head, a collar and a slab of upholstery. At .62 the shoulders and the shirt come through, and
-# what stays in front is the arms and the base — which is also what covers the feet that would
-# otherwise dangle over the castors.
-CLIP=0.62
+# 'clip' is how much of the chair's top to leave behind the person. Zero: the whole chair goes
+# in front, backrest included, which is what you would see from above of somebody sitting with
+# their back to you. Partial values were tried (.33 / .45 / .62) and read as the chair standing
+# beside its occupant rather than round them.
+CLIP=0.0
 def cut(l,t,r,b,clip=CLIP):
     return {'x':round(l/W,5),'y':round(t/H,5),'w':round((r-l)/W,5),'h':round((b-t)/H,5),
             'clip':clip}
