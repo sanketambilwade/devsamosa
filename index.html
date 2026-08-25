@@ -2224,13 +2224,10 @@ function phaseRoles(ph){
   return rolesAt('ph'+occ,()=>{
     const order=shuffled(occ),roles={},len=ph.t[1]-ph.t[0];
     if(ph.at==='meet'){
-      /* People drift in, but a meeting breaks up when it breaks up: everyone leaves together.
-         The drift is over half the meeting rather than a third because the room has one door,
-         48px of it — send a dozen people at it inside a few seconds and they arrive as a heap
-         however carefully they step round each other on the way. */
+      /* people drift in, but a meeting breaks up when it breaks up: everyone leaves together */
       order.forEach((i,k)=>{
         if(k>=MEET.length)return;
-        roles[i]={start:ph.t[0]+0.5+h32(i,occ,daySeed,2)*len*0.55,end:ph.t[1]-1,want:'meet#'+k};
+        roles[i]={start:ph.t[0]+0.5+h32(i,occ,daySeed,2)*len*0.3,end:ph.t[1]-1,want:'meet#'+k};
       });
       return roles;
     }
@@ -2334,11 +2331,7 @@ function retarget(s,m){
 }
 function advance(s,dt){
   if(!s.wp||s.wi>=s.wp.length)return false;
-  /* Giving way is a near-stop rather than a stop, so the queue keeps shuffling and the walk
-     cycle keeps playing. Patience runs out after a second or so: otherwise anyone stuck behind
-     somebody who has arrived and stopped would wait there all day. */
-  s.wait=s.blk?(s.wait||0)+1:0; s.blk=0;
-  let budget=walkPx()*dt*(s.wait&&s.wait<60?.1:1),moved=false;
+  let budget=walkPx()*dt,moved=false;
   while(budget>0&&s.wi<s.wp.length){
     const[tx,ty]=s.wp[s.wi];
     const dx=tx-s.px,dy=ty-s.py,d=Math.hypot(dx,dy);
@@ -2352,65 +2345,14 @@ function advance(s,dt){
   return moved;
 }
 
-/* ---------- keeping out of each other's way ----------
-   Paths are found one person at a time and know nothing about anybody else, so two people
-   sent down the same aisle walked straight through one another. Reserving cells over time for
-   eighteen of them every frame is the proper fix and far more machinery than this needs; a
-   nudge apart is enough, because they are already heading somewhere and will straighten up
-   once they are clear. The footprint is wider than it is tall on purpose — side by side reads
-   as two people, one behind the other reads as depth, so it needs less room than side by side.
-   The width is the body's own 33px: any less and they pack into a single blur, which is what
-   made a dozen people leaving for the standup look like one. A nudge is only ever accepted onto
-   floor the walk grid already allows. */
-const SEPX=36, SEPY=40, SEPYW=64;
-function nudge(s,dx,dy){
-  const x=s.px+dx, y=s.py+dy;
-  if(walk(...cellOf(x,y))){s.px=x;s.py=y;return true}
-  if(walk(...cellOf(x,s.py))){s.px=x;return true}   // slide along the wall rather than stop dead
-  if(walk(...cellOf(s.px,y))){s.py=y;return true}
-  return false;                                     // boxed in: the caller has to wait instead
-}
-/* which way they are actually travelling, for deciding who gives way */
-function heading(s){
-  if(!s.wp||s.wi>=s.wp.length)return null;
-  const dx=s.wp[s.wi][0]-s.px, dy=s.wp[s.wi][1]-s.py, d=Math.hypot(dx,dy);
-  return d>.01?[dx/d,dy/d]:null;
-}
-function separate(dt){
-  const step=walkPx()*dt;
-  for(let i=0;i<S.length;i++){
-    const a=S[i]; if(a.ooo)continue;
-    for(let j=i+1;j<S.length;j++){
-      const b=S[j]; if(b.ooo||(!a.mv&&!b.mv))continue;
-      /* Two people both on the move give each other a whole body's depth — pack them any
-         closer and a crowd at the meeting room door is one unreadable heap. Somebody sitting
-         at their desk gets less, because the aisle behind them is not wide enough to grant it
-         and the alternative is everyone crawling the length of the room. */
-      const sy=(a.mv&&b.mv)?SEPYW:SEPY;
-      let dx=(a.px-b.px)/SEPX, dy=(a.py-b.py)/sy, d=Math.hypot(dx,dy);
-      if(d>=1)continue;
-      if(d<1e-3){dx=(i%2?1:-1);dy=0;d=1}        // exactly on top of each other: pick a side
-      /* Resolve the whole overlap rather than lean against it. A nudge worth a fraction of a
-         step is no use when one of them is walking a full step straight at the other: it just
-         slows the walk-through down. Capped at three steps so it still reads as sidling round
-         somebody and not as a jump. */
-      const share=(a.mv&&b.mv)?.5:1;
-      let cx=dx/d*(1-d)*share*SEPX, cy=dy/d*(1-d)*share*sy;
-      const c=Math.hypot(cx,cy), cap=step*3;
-      if(c>cap){cx=cx/c*cap;cy=cy/c*cap}
-      const ma=a.mv&&nudge(a, cx, cy), mb=b.mv&&nudge(b,-cx,-cy);
-      if(ma||mb)continue;
-      /* Nowhere to step aside — the gaps between desks are one person wide. Whoever is walking
-         into the other's back hangs behind for a frame instead of walking through them, which
-         turns a scrum in a doorway into a queue. Head on, the later of the two gives way, or
-         both would wait for each other for ever. */
-      const ha=a.mv&&heading(a), hb=b.mv&&heading(b);
-      const intoB=!!ha&&(ha[0]*-dx+ha[1]*-dy)>0, intoA=!!hb&&(hb[0]*dx+hb[1]*dy)>0;
-      if(intoB)a.blk=1;                  // walking into the other's back: fall in behind
-      else if(intoA)b.blk=1;             // head on, the first of the two goes and the other waits
-    }
-  }
-}
+/* People walk through each other. Stepping round is a crowd simulation — separation, giving
+   way, queueing at a door — and it was built and taken out again: the office has one 48px
+   doorway and eighteen people who all want it at once, so anything strong enough to keep them
+   apart there was strong enough to lock them in place, and ten of them once shuffled on the
+   spot for a whole standup without arriving. Overlapping for a few seconds costs nothing on a
+   screen you glance at; not arriving is a bug you can see from across the room. Different
+   people do take different routes, which spreads the traffic without any of that machinery —
+   see BFSDIRS. */
 
 /* ---------- who is on the floor ---------- */
 const spriteOf=p=>(p.sprite!=null?p.sprite:hstr(p.id||p.name))%NSPR;
@@ -2550,10 +2492,9 @@ function frame(now){
   hh.style.transform='translate(-50%,-100%) rotate('+((hr%12)*30+mn*0.5)+'deg)';
   mm.style.transform='translate(-50%,-100%) rotate('+(mn*6+(m*60%60)*0.1)+'deg)';
   board.style.setProperty('--wd',Math.max(.28,Math.min(.9,STRIDE/walkPx())).toFixed(3)+'s');
-  S.forEach(s=>{retarget(s,m); s.mv=advance(s,dt)});
-  separate(dt);
   S.forEach((s,k)=>{
-    const moving=s.mv;
+    retarget(s,m);
+    const moving=advance(s,dt);
     const el=els[k];if(!el)return;
     const scr=screens[k];
     if(s.ooo){el.style.display='none';if(scr)scr.style.display='none';return}
