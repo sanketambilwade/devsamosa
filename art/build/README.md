@@ -20,6 +20,7 @@ python plates.py         # 1535 -> 1536 wide, then -> ../office.webp and ../offi
 python measure.py        # finds the chairs, the seats and the screens -> chairs.json
 python grid6.py          # walk grid, seats, destinations -> office-layout.json
 python apply-layout.py   # writes that into index.html's `const L=` line
+python sheets.py         # the thirteen sprites per character -> ../cNN.png  (independent)
 ```
 
 A few seconds end to end and safe to re-run: the four are deterministic, so an unchanged
@@ -27,8 +28,8 @@ pipeline reproduces both plates and `index.html` byte for byte. Worth checking w
 `git status` afterwards — if something shows modified when you only meant to change one number,
 something upstream moved.
 
-The character sheets in `art/cNN.png` are not built here. Their source is one file per developer
-named after them, which is why it is gitignored and the shipped copies are numbered.
+`sheets.py` is independent of the other four and only needs re-running when the character art
+changes.
 
 ## What each step is actually doing
 
@@ -46,6 +47,13 @@ pushed out to the outline round the seat and the castors under it — and the si
 inside the cushion's own rows, or the desk's dark front edge, which runs the full width of the
 desk, swallows the chair whole. Feet go 21px below the top of the cushion, which is what leaves
 a head, a collar and the shoulders clear of the backrest.
+
+**`sheets.py`** — packs each character's thirteen sprites into the one 4x6 sheet `.ofc-spr`
+indexes with `--cx` and `--cy`. **The order comes from the source manifest and must not be
+sorted**: a board stores which character somebody uses as a number into these sheets, so
+reordering them silently gives everyone someone else's face. It is also why the sheets ship
+numbered and their source does not ship at all — the source is one file per developer, named
+after them, and this repository is public.
 
 **`grid6.py`** — the walk grid, at 8px cells. A cell is walkable only when *every* pixel in it
 is floor; the older ">=55% floor" rule let people walk over desks and counters.
