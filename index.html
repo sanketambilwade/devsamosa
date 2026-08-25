@@ -41,7 +41,7 @@
   /* Sticky headers are opaque paper now, so the Android compositing workaround that
      --glassS existed for is gone with it: there is no backdrop-filter left to fail. */
   --stroke:rgba(255,255,255,.11); --spec:rgba(255,255,255,.16); --hair:#34302A;
-  --txt:#F4EFE6; --txt2:rgba(244,239,230,.66); --txt3:rgba(244,239,230,.4);
+  --txt:#FFFFFF; --txt2:rgba(255,255,255,.8); --txt3:rgba(255,255,255,.58);
   --fill:#282420; --fill2:#332E28; --field:#161412;
   --optbg:#2A2A30;
   --shadow:0 12px 44px rgba(0,0,0,.55);
@@ -56,7 +56,7 @@
   color-scheme:light;
   --bg:#E9E9EF; --glass:rgba(255,255,255,.86);
   --stroke:rgba(255,255,255,.9); --spec:rgba(255,255,255,1); --hair:#DED5BF;
-  --txt:#171512; --txt2:rgba(23,21,18,.88); --txt3:rgba(23,21,18,.66);
+  --txt:#000000; --txt2:rgba(0,0,0,.9); --txt3:rgba(0,0,0,.68);
   --fill:#F3ECDC; --fill2:#EAE1CC; --field:#FFFDF7;
   --optbg:#FFFFFF;
   --shadow:0 12px 40px rgba(60,60,90,.16);
@@ -552,10 +552,16 @@ td.n,th.n{text-align:right;white-space:nowrap}
   border-top:2px dashed #d8cfb6;display:flex;align-items:center;justify-content:center;gap:5px;
   cursor:pointer;font-family:var(--sans)}
 .ofc-bst i{width:6px;height:6px;border-radius:50%;background:var(--green);display:block}
-.ofc-bst b{font:700 8.5px/1 var(--sans);letter-spacing:.6px;color:var(--green)}
+/* the field rules further up give every select a box, a chevron and width:100%; on a 104px
+   badge it has to read as the printed line it replaced, so all of that is undone here */
+.ofc-bsel{-webkit-appearance:none;appearance:none;background:none;background-image:none;
+  border:0;padding:0;width:auto;outline:none;cursor:pointer;
+  text-align:center;text-align-last:center;
+  font:700 8.5px/1 var(--sans);letter-spacing:.6px;color:var(--green)}
+.ofc-bsel:focus{box-shadow:none}
+.ofc-bsel:focus-visible{outline:2px solid var(--saffron);outline-offset:2px;border-radius:3px}
 .ofc-badge.out .ofc-bst i{background:var(--purple)}
-.ofc-badge.out .ofc-bst b{color:var(--purple)}
-.ofc-bst:active{transform:scale(.94)}
+.ofc-badge.out .ofc-bsel{color:var(--purple)}
 /* character picker */
 .ofc-pick{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
 .ofc-pk{aspect-ratio:2/3;border:2px solid var(--hair);border-radius:9px;background-color:var(--fill);
@@ -803,7 +809,7 @@ select.c-st{font-family:var(--mono);font-weight:700;font-size:10px;letter-spacin
 .gt select.c-st.s-unassigned{background-color:rgba(255,159,10,.2);color:var(--saffron)}
 .gt select.c-st.s-notcall{background-color:rgba(94,92,230,.24);color:#9B99F5}
 
-.gt tr.ghost select.c-st{opacity:.5}
+.gt tr.ghost select.c-st{opacity:.72}
 .gt tr:hover select.c-st,.gt tr:focus-within select.c-st{opacity:1}
 
 /* ---- footer ---- */
@@ -911,7 +917,7 @@ header{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
 .sheet .cont{color:var(--txt3);padding-left:16px;font-size:15px}
 .sheet .tcell input{font-size:15px;width:100%}
 .sheet tr.ghost .c-tk::placeholder{color:var(--txt3)}
-.sheet tr.ghost .c-pr,.sheet tr.ghost .c-st,.sheet tr.ghost .c-es{opacity:.45}
+.sheet tr.ghost .c-pr,.sheet tr.ghost .c-st,.sheet tr.ghost .c-es{opacity:.72}
 .sheet tr:hover .c-pr,.sheet tr:hover .c-st,.sheet tr:hover .c-es,
 .sheet tr:focus-within .c-pr,.sheet tr:focus-within .c-st,.sheet tr:focus-within .c-es{opacity:1}
 .sheet .acts{opacity:0;transition:opacity .14s}
@@ -927,7 +933,7 @@ header{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
   padding:6px 8px;font-size:14px;transition:background-color .12s}
 .gt input:hover,.gt select:hover{background-color:var(--fill)}
 .gt input:focus,.gt select:focus{background-color:var(--field);border-color:var(--saffron)}
-.gt tr.ghost td .who{opacity:.55}
+.gt tr.ghost td .who{opacity:.82}
 .gt tr.ghost input::placeholder{color:var(--txt3)}
 .gt .c-tk{min-width:170px}
 .gt .c-es,.gt .c-sp{width:62px;text-align:right}
@@ -2710,8 +2716,11 @@ function railHTML(){
       ${(()=>{const pr=projOf(s.p.id);
         return `<div class="ofc-bpr${pr?'':' none'}" data-act="open" title="${pr?esc(pr.name):'No project yet'}">
           ${pr?`<i style="background:${pr.color}"></i>${esc(pr.name)}`:'—'}</div>`;})()}
-      <button class="ofc-bst" data-act="status" aria-pressed="${s.ooo}"
-        title="Tap to mark ${s.ooo?'back in':'out of office'}"><i></i><b>${s.ooo?'OOO':'WORKING'}</b></button>
+      <label class="ofc-bst" title="Working, or out of office today"><i></i>
+        <select class="ofc-bsel" data-act="status" aria-label="${esc(s.p.name)} today">
+          <option value="in"${s.ooo?'':' selected'}>WORKING</option>
+          <option value="out"${s.ooo?' selected':''}>OOO</option>
+        </select></label>
     </div>`).join('');
 }
 function headHTML(m){
@@ -2812,9 +2821,14 @@ function mount(){
     const card=e.target.closest('[data-p]'); if(!card)return;
     const hit=e.target.closest('[data-act]');
     const act=hit&&hit.dataset.act;
-    if(act==='status'){const s=S.find(x=>x.p.id===card.dataset.p); return setAway(card.dataset.p,!s.ooo)}
+    if(act==='status')return;                       // the select below handles itself
     if(act==='char')return charSheet(card.dataset.p);
     goToPerson(card.dataset.p);
+  };
+  $('.ofc-rail').onchange=e=>{
+    const sel=e.target.closest('select[data-act="status"]');
+    const card=e.target.closest('[data-p]');
+    if(sel&&card)setAway(card.dataset.p,sel.value==='out');
   };
   stop(); last=performance.now(); raf=requestAnimationFrame(frame);
 }
