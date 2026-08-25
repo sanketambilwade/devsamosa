@@ -24,3 +24,13 @@ dist/
 packaging/android/.build/
 packaging/win/bin/
 packaging/win/obj/
+
+# Intermediates of the office art pipeline (art/build/). The scripts and their two inputs are
+# tracked; everything they produce is either regenerated in seconds or already in the app.
+#   PLATE.png            1.5 MB lossless working copy, and the input to grid6.py
+#   office-layout*.json  lives in index.html as `const L=`; a second copy only drifts
+art/build/PLATE.png
+art/build/office-layout.json
+art/build/office-layout.min.json
+art/build/chair-preview.png
+art/build/chair-placed.png
