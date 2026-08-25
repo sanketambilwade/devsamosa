@@ -1129,7 +1129,7 @@ header{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
 const KEY='devsamosa:v1', OLD='teampulse:v1', SESS='devsamosa:session';
 const SHARED=true, SESSION_HOURS=12;
 let DB={v:2,authV:0,dataV:0,user:'',pass:'',recovery:'',roster:[],people:[],projects:[],updates:[],allocs:[]};
-let ME=null, ADMIN=false, view='office', THEME='dark';
+let ME=null, ADMIN=false, view='office', THEME='light';
 const PAL=['#0A84FF','#FF9F0A','#BF5AF2','#30D158','#FF375F','#40C8E0','#FF6B35','#5E5CE6','#FFD60A','#64D2FF'];
 
 const $=(s,r=document)=>r.querySelector(s);
@@ -2246,10 +2246,18 @@ function bgInit(){
   drawFn=draw;
   size();addEventListener('resize',size);
 }
-function toggleTheme(){THEME=THEME==='dark'?'light':'dark';
+const THEMEKEY='devsamosa:theme';
+const readTheme=()=>{try{const v=localStorage.getItem(THEMEKEY);
+  return v==='dark'||v==='light'?v:'light'}catch(e){return 'light'}};
+function applyTheme(){
   document.documentElement.dataset.t=THEME;
-  document.querySelector('meta[name=theme-color]').content=THEME==='dark'?'#0A0A0E':'#ECECF2';
-  drawFn&&drawFn()}
+  const m=document.querySelector('meta[name=theme-color]');
+  if(m)m.content=THEME==='dark'?'#0A0A0E':'#ECECF2';
+  drawFn&&drawFn();
+}
+function toggleTheme(){THEME=THEME==='dark'?'light':'dark';
+  try{localStorage.setItem(THEMEKEY,THEME)}catch(e){}
+  applyTheme()}
 
 /* ==================== shell ==================== */
 const VIEWS=[
@@ -4698,8 +4706,13 @@ function seed(){
 
 /* ==================== boot ==================== */
 (async()=>{
-  THEME=matchMedia('(prefers-color-scheme:light)').matches?'light':'dark';
-  document.documentElement.dataset.t=THEME;
+  /* Light is the default, not the operating system's preference. The office board is dark art
+     on a light page and that is the pairing the app was designed around; picking up whatever the
+     laptop happens to be set to meant half the people opening the link saw the other one. The
+     ••• menu still switches it, and now the switch is remembered — a default is only a default
+     until somebody chooses otherwise. */
+  THEME=readTheme();
+  applyTheme();
   try{bgInit()}catch(e){console.error('background',e)}
   try{
     if(GHENC){
