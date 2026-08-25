@@ -105,6 +105,46 @@ There is no username. One password, one board, everyone sees the same thing.
 The script suggests a five-word password like `cedar-lantern-quartz-meadow-ripple`. Use it. It's
 strong enough for the encrypted blob to be published, and short enough to read out on a call.
 
+### Giving someone a look without giving them the board
+
+If you want to show the board to someone — a trial, a demo, another team — they can have a
+**guest password**. They see everything and can change nothing.
+
+It needs a **second token**, and that is the point. Make one the same way as step 3, but set
+**Contents: Read-only**. Then re-run the setup script and give it that token when it asks for
+the read-only one. It checks the token really cannot write before it will use it.
+
+The two passwords then do different things:
+
+| password | what they get |
+|---|---|
+| team | everything: type updates, book the plan, change the team |
+| guest | reads the board. Every field is text. No ••• menu, no exports, no ID card controls. |
+
+A guest can still browse every tab and play with the office — the jump buttons, the light
+switch, the whole floor — which is the part that shows the app off.
+
+**Why a second token rather than a setting.** The encrypted blob is published in `index.html`.
+Anyone with a password can decrypt their own half of it and read the token inside. If both
+passwords opened the same write token, a guest could just take it and change the board outside
+the app. With a read-only token there is nothing to take: GitHub refuses the write, whatever
+they do with it.
+
+Guests get no PIN. They type the password each time, and nothing is left in their browser when
+the tab closes.
+
+### Changing the passwords
+
+Run `node setup-shared-login.js` again. New passwords, same or new tokens, commit and push.
+
+Everyone types their password once more and picks a new PIN — changing the password
+invalidates the sealed copy on every device, which is exactly what you want when you are
+resetting.
+
+If the old password may have got out, **rotate the tokens on GitHub too**. Someone holding the
+old password and an old copy of `index.html` still has the old token until you do; the file is
+public and old versions live in the repository history.
+
 ### Why the PIN isn't the password
 
 They protect different things, which is why the short one is safe and the long one is needed.

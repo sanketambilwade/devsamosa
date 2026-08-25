@@ -186,6 +186,30 @@ input[type=checkbox]:focus{box-shadow:0 0 0 3px var(--selglow)}
 label.f{display:block}
 label.f .lbl{margin-bottom:6px;display:block}
 
+/* A guest reads the board. Everything that writes to it is taken off the screen rather than
+   left greyed out — a screen full of dead controls reads as broken. The read-only token is what
+   actually prevents a write; this is so the app looks like it was meant to be used this way.
+   Anything missed here still refuses, via need(), with a toast rather than silence. */
+#gout{display:none}
+body.viewer #dots{display:none}
+body.viewer #gout{display:inline-flex}
+body.viewer #ai,body.viewer #edit,body.viewer #edit2,body.viewer #ct,body.viewer #xl,
+body.viewer #dct,body.viewer #dxl,body.viewer #addp,body.viewer #tdy,
+body.viewer .rmdev,body.viewer .acts,body.viewer .foot .b.p{display:none!important}
+body.viewer .gh{display:none}
+/* A disabled field still looks like a field, which reads as a form somebody has broken. For
+   a guest they are text: no box, no chevron, no dimming. The status pill keeps its colour,
+   because that is data rather than a control. */
+body.viewer #main textarea:disabled,body.viewer #main input:disabled,
+body.viewer #main select:disabled:not(.c-st){
+  background-color:transparent!important;border-color:transparent!important;
+  background-image:none!important;color:var(--txt);-webkit-text-fill-color:var(--txt);
+  opacity:1;cursor:default;padding-right:8px}
+/* the status pill is data, not a control: it keeps its colour and its shape */
+body.viewer .c-st:disabled{opacity:1;cursor:default;background-image:none}
+body.viewer .gt textarea:disabled::placeholder{color:var(--txt3);-webkit-text-fill-color:var(--txt3)}
+body.viewer .trk,body.viewer .bk{cursor:default}
+
 /* ---------------- header ---------------- */
 header{display:flex;align-items:center;gap:12px;padding:22px 0 14px;flex-wrap:wrap}
 .mark{width:38px;height:38px;flex:0 0 auto;filter:drop-shadow(2px 2px 0 var(--markshadow))}
@@ -1116,6 +1140,7 @@ header{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
     <div class="seg navseg" id="segnav"></div>
     <div class="hbtns">
       <button class="b s" id="dots" title="Menu">•••</button>
+      <button class="b s" id="gout" title="Sign out">Sign out</button>
     </div>
   </header>
   <main id="main"><div class="paper card"><div class="cb">
@@ -1387,6 +1412,13 @@ const GHKEY='devsamosa:gh', SHFILE='shared.json';
    per device, as before.                                                   */
 const GHENC={"salt":"t6XrtJnpisyDmIM5NV86wQ==","iv":"5VFv6j4I7AocjAiL","ct":"4Rn/wbG9MligtxXsa2X8XTq63kaTNVm95jw1HlwJ/O+FNqbjDDW8yP0ijaVj1P/2EG6MU2VL6ymiiW1yUVS5Z1FDOTYddIHDVhQYmhi7iGBlBXPLhEfhdzqFQ0bojl+tmF6rpn778rgLPouifHF0OrFO5K6kfnf/L4ug7bbbv6n2VK0pJOmxwnu6ftP/eUasShBfsVJ7SNiZkCDh/INxVesG9QkWYH1DqACx8zvQWQnNszUB1iI5qpvGZA==","it":600000};
 
+/* The guest half of the sign-in. Two passphrases, two sealed blobs, two GitHub tokens: the
+   admin one can write, the guest one is a fine-grained PAT with Contents: Read, so GitHub
+   itself refuses a guest's PUT. That is the security. Everything below about read-only mode is
+   tidiness on top of it — a guest who opens devtools and lifts the token still gets a 403.
+   null until setup-shared-login.js has been given a read-only token. */
+const GHVIEW=null;
+
 async function ghKey(pass,salt,it){
   const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),
     'PBKDF2',false,['deriveKey']);
@@ -1416,6 +1448,18 @@ async function ghUnlock(pass){
   const cfg=await ghOpen(pass,GHENC);
   if(!cfg.owner||!cfg.repo||!cfg.token)throw new Error('bad payload');
   return cfg;
+}
+/* One field, two passwords. AES-GCM throws on the wrong key, so trying each blob in turn is
+   both the login check and the role check, and neither password reveals anything about the
+   other. Admin is tried first: if somebody ever sets both to the same string, they get the
+   one that can edit rather than a silent demotion. */
+async function ghUnlockAny(pass){
+  if(GHENC){try{return{cfg:await ghUnlock(pass),role:'admin'}}catch(e){}}
+  if(GHVIEW){try{
+    const cfg=await ghOpen(pass,GHVIEW);
+    if(cfg.owner&&cfg.repo&&cfg.token)return{cfg,role:'viewer'};
+  }catch(e){}}
+  return null;
 }
 
 /* ---- the device PIN -----------------------------------------------------
@@ -1699,8 +1743,9 @@ function ghTeamLock(){
     ${inAppBrowser()?`<p class="hint" style="margin-top:14px;color:var(--saffron)">
       You have opened this inside a chat app. It will forget your PIN every time you
       close it — tap the <b>•••</b> menu and choose <b>Open in browser</b> first.</p>`:''}
-    <p class="hint" style="margin-top:14px">Everyone uses the same password, and everyone
-      sees the same board. <a href="#" id="own">Use this device only</a></p>
+    <p class="hint" style="margin-top:14px">Everyone on the team uses the same password and
+      sees the same board.${GHVIEW?' A guest password shows the board without changing it.':''}
+      <a href="#" id="own">Use this device only</a></p>
   </div>`;
   const fail=m=>{$('#err').textContent=m;$('#lc').classList.remove('shake');
     void $('#lc').offsetWidth;$('#lc').classList.add('shake')};
@@ -1715,10 +1760,17 @@ function ghTeamLock(){
     const pw=$('#tp').value;
     if(!pw)return fail('Enter the team password');
     $('#go').disabled=true;$('#err').textContent='Checking…';
-    let cfg;
-    try{cfg=await ghUnlock(pw)}
-    catch(e){$('#go').disabled=false;return fail('That password is not right')}
-    ghPinNew(cfg);
+    const r=await ghUnlockAny(pw);
+    if(!r){$('#go').disabled=false;return fail('That password is not right')}
+    if(r.role==='admin')return ghPinNew(r.cfg);
+    /* A guest is a visitor: no PIN, nothing sealed into their browser, and the session goes
+       when the tab does. They retype the password next time, which is what you want from
+       something you hand out for a trial. */
+    Object.assign(GH,{owner:r.cfg.owner,repo:r.cfg.repo,
+      branch:r.cfg.branch||'main',token:r.cfg.token});
+    ghMemSave(r.cfg);
+    await setSession('guest','viewer'); ADMIN=false;
+    await ghStart();
   };
   setTimeout(()=>{const f=$('#tp');f&&f.focus()},240);
 }
@@ -1869,8 +1921,10 @@ async function ghStart(){
     if((DB.dataV||0)<2){DB.dataV=2;DB.updates=[];DB.allocs=[]}
     ghWatch();
     const s=await getSession();
-    /* with a shared password the team password IS the login — don't ask twice */
-    if(s&&s.role==='admin'&&(GHENC||DB.pass)){ADMIN=true;enter()}
+    /* With a shared password the team password IS the login — don't ask twice. A guest comes
+       back as a guest: the role is what decides read-only, and the token behind it cannot
+       write in any case. */
+    if(s&&/^(admin|viewer)$/.test(s.role||'')&&(GHENC||DB.pass)){ADMIN=s.role==='admin';enter()}
     /* a set-up device asks for its PIN, never the passphrase again */
     else if(GHENC)ghPinBox()?ghPinLock():ghTeamLock();
     else lockScreen();
@@ -1951,6 +2005,8 @@ async function load(){
 }
 let saveT;
 function save(msg){
+  /* the app half of read-only; a guest's token is refused by GitHub as well */
+  if(!ADMIN)return;
   clearTimeout(saveT);
   saveT=setTimeout(async()=>{
     try{
@@ -2181,7 +2237,15 @@ function enter(fresh){
   if(fresh)intro(go);else go();
 }
 function boot2(){
-  ADMIN=true;buildNav();autoSnapshot();
+  buildNav();autoSnapshot();
+  /* A guest has no ••• menu, so signing out needs its own button — without one a shared
+     laptop keeps somebody else's board on screen with no way to leave it. */
+  const go=$('#gout');
+  if(go)go.onclick=async()=>{
+    if(GH.poll)clearInterval(GH.poll);
+    await clearSession();ghMemForget();GH.token='';ADMIN=false;
+    ghTeamLock();
+  };
   if(typeof SEED!=='undefined'&&!DB.people.length){
     const r=mergeSeed();save();render();
     toast(`Added ${r.np} developers and ${r.nj} projects`);
@@ -2189,8 +2253,23 @@ function boot2(){
   }
   render();
 }
-function need(){return true}
-function lockdown(){}
+/* Restored Aug 2026 for the guest sign-in. Every write path already called need(); it had
+   been stubbed to true when the viewer role was dropped. */
+function need(){
+  if(ADMIN)return true;
+  toast('Signed in as a guest — the board is read-only',1);
+  return false;
+}
+/* Controls that write are disabled outright rather than merely hidden, so one that escapes the
+   stylesheet still cannot be typed into. Navigation is exempt by id: the two date pickers, the
+   calendar's month and year, the report range and its two dates. */
+const RONAV='#dpick,#hpick,#hm,#hy,#rp,#rf,#rt';
+function lockdown(){
+  document.body.classList.toggle('viewer',!ADMIN);
+  if(ADMIN)return;
+  const keep=new Set($$(RONAV));
+  $$('#main input,#main select,#main textarea').forEach(el=>{if(!keep.has(el))el.disabled=true});
+}
 
 /* ==================== lookups ==================== */
 const person=id=>DB.people.find(p=>p.id===id);
@@ -2291,6 +2370,7 @@ function ticker(){
 }
 function render(){
   ticker();
+  lockdown();
   $$('#segnav button,#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===view));
   const onFloor=view==='office';
   /* the phone layout sizes the floor from the space left over, and needs to know it is on */
@@ -2928,7 +3008,7 @@ function railHTML(){
   return S.map(s=>`
     <div class="ofc-badge${s.ooo?' out':''}" data-p="${s.p.id}" style="--i:${s.i}">
       <div class="ofc-bhd"><span>ID</span><span>${pad(s.i+1)}</span></div>
-      ${s.p.guest?`<div class="ofc-face gst">
+      ${(s.p.guest||!ADMIN)?`<div class="ofc-face gst">
         <div class="ofc-frame">${portrait(s.p)}</div></div>`
       :`<button class="ofc-face" data-act="char" title="Change character">
         <div class="ofc-frame">${portrait(s.p)}</div></button>`}
@@ -2936,8 +3016,8 @@ function railHTML(){
       ${(()=>{const pr=projOf(s.p.id);
         return `<div class="ofc-bpr${pr?'':' none'}" data-act="open" title="${pr?esc(pr.name):'No project yet'}">
           ${pr?`<i style="background:${pr.color}"></i>${esc(pr.name)}`:'—'}</div>`;})()}
-      ${s.p.guest
-        ?`<div class="ofc-bst gst" title="On the roster, not on the board"><i></i>IN OFFICE</div>`
+      ${(s.p.guest||!ADMIN)
+        ?`<div class="ofc-bst gst" title="${s.p.guest?'On the roster, not on the board':'Read-only'}"><i></i>${s.p.guest?'IN OFFICE':(s.ooo?'OUT OF OFFICE':'WORKING')}</div>`
         :`<label class="ofc-bst" title="Working, or out of office today"><i></i>
         <select class="ofc-bsel" data-act="status" aria-label="${esc(s.p.name)} today">
           <option value="in"${s.ooo?'':' selected'}>WORKING</option>
@@ -3042,12 +3122,13 @@ function mount(){
     }else hold={lo:+b.dataset.lo,hi:+b.dataset.hi};
     simM=hold.lo;
   };
-  board.onclick=e=>{const t=e.target.closest('[data-p]');if(t)openPerson(t.dataset.p)};
+  board.onclick=e=>{if(!ADMIN)return; const t=e.target.closest('[data-p]');if(t)openPerson(t.dataset.p)};
   $('.ofc-rail').onclick=e=>{
     const card=e.target.closest('[data-p]'); if(!card)return;
     const hit=e.target.closest('[data-act]');
     const act=hit&&hit.dataset.act;
     if(act==='status')return;                       // the select below handles itself
+    if(!ADMIN)return;                                // a guest's card is a picture, not a control
     if(isGuest(card.dataset.p))return openPerson(card.dataset.p);
     if(act==='char')return charSheet(card.dataset.p);
     goToPerson(card.dataset.p);
@@ -3277,7 +3358,7 @@ function vToday(){
           <span class="who">${esc(p.name)}</span>
           <button class="i rmdev" title="Remove ${esc(p.name)} from the team">✕</button></div>`}</td>
       <td data-l="Task" class="full tcell"><textarea class="c-tk" rows="1"
-        placeholder="${i?'Another task…':'Type today\u2019s update…'}">${esc(r?r.task:'')}</textarea></td>
+        placeholder="${ADMIN?(i?'Another task…':'Type today\u2019s update…'):'—'}">${esc(r?r.task:'')}</textarea></td>
       <td data-l="Project"><select class="c-pr">${prOpts(r?r.projectId:(DB.projects[0]||{}).id)}</select></td>
       <td data-l="Hours" class="n detcol${H}"><input class="c-es" type="number" step=".5" min="0" value="${r&&+r.est?+r.est:''}" placeholder="–"></td>
       <td data-l="Status"><select class="c-st s-${r?r.status:'progress'}">${stOpts(r?r.status:'progress')}</select></td>

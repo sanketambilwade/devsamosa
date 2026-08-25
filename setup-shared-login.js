@@ -1,15 +1,23 @@
-/* setup-shared-login.js — turn one shared password into the whole sign-in.
+/* setup-shared-login.js — turn shared passwords into the whole sign-in.
  *
  *   node setup-shared-login.js
  *
- * Asks for your GitHub token and a team password, checks the token actually
- * works, encrypts it, and writes the result into index.html. Everything happens
- * on this machine: the token is never sent anywhere except to github.com to be
- * verified, and the password is never stored at all.
+ * Makes up to two credentials and writes both into index.html:
  *
- * After running it, commit and push index.html. The encrypted blob is safe to
- * publish — without the password it is meaningless — but that also means the
- * password is the only thing protecting the board. Use the one this generates.
+ *   TEAM password   ->  GHENC   ->  a token that can write.  Full access.
+ *   GUEST password  ->  GHVIEW  ->  a token that can only read.  Read-only.
+ *
+ * The guest token is checked here for the thing that actually matters: that
+ * GitHub will refuse a write with it. That is what makes a guest link safe to
+ * hand out — the app's read-only mode is tidiness on top of it, and somebody who
+ * lifts the guest token out of the published page still cannot change anything.
+ *
+ * Everything happens on this machine: the tokens are never sent anywhere except
+ * to github.com to be verified, and the passwords are never stored at all.
+ *
+ * After running it, commit and push index.html. The encrypted blobs are safe to
+ * publish — without the passwords they are meaningless — but that also means the
+ * passwords are the only thing protecting the board. Use the ones it generates.
  */
 const fs = require('fs');
 const path = require('path');
@@ -81,7 +89,7 @@ async function main() {
   const m = /^([\w.-]+)\/([\w.-]+)$/.exec(repo);
   if (!m) { console.error('\nWrite it as owner/name, e.g. sanketambilwade/devsamosa-data'); process.exit(1); }
 
-  const token = await ask('GitHub token (input hidden): ', true);
+  const token = await ask('GitHub token, read AND write (input hidden): ', true);
   if (token.length < 20) { console.error('\nThat token looks too short.'); process.exit(1); }
 
   process.stdout.write('\nChecking the token... ');
@@ -102,6 +110,38 @@ async function main() {
   console.log(`ok — ${info.full_name}, ${info.private ? 'private' : 'PUBLIC (!)'}`);
   if (!info.private) console.log('  WARNING: that repository is public. Anyone can already read the board.');
 
+  /* The guest half. Optional — press Enter for an admin-only build — but if a token is given
+     it has to be one GitHub will not let write, because that is the entire guarantee. */
+  console.log('\nGuest sign-in (optional). A second, READ-ONLY token lets you hand the link');
+  console.log('to someone for a trial: they see the board and cannot change it, and neither');
+  console.log('can anyone who digs that token out of the published page.');
+  const vToken = await ask('Read-only token, or Enter to skip (input hidden): ', true);
+  if (vToken && vToken.length < 20) {
+    console.error('\nThat token looks too short.'); closeInput(); process.exit(1);
+  }
+  if (vToken && vToken === token) {
+    console.error('\nThat is the same token as the team one. The guest token has to be a');
+    console.error('separate, read-only one, or a guest can write.');
+    closeInput(); process.exit(1);
+  }
+  if (vToken) {
+    process.stdout.write('Checking the read-only token... ');
+    const vr = await fetch(`https://api.github.com/repos/${m[1]}/${m[2]}`, {
+      headers: { Authorization: 'Bearer ' + vToken, Accept: 'application/vnd.github+json' },
+    });
+    if (!vr.ok) {
+      console.error(`failed (HTTP ${vr.status}). It cannot even read the repository.`);
+      closeInput(); process.exit(1);
+    }
+    const vi = await vr.json();
+    if (vi.permissions && vi.permissions.push) {
+      console.error('failed.\nThat token CAN write. Give it Contents: Read-only, or a guest is');
+      console.error('not a guest. Re-run once you have made one.');
+      closeInput(); process.exit(1);
+    }
+    console.log('ok — reads, cannot write.');
+  }
+
   const suggested = makePass();
   console.log(`\nSuggested team password:  ${suggested}`);
   console.log('  (five random words. Strong enough that the published blob cannot be');
@@ -114,38 +154,70 @@ async function main() {
     closeInput(); process.exit(1);
   }
 
-  const salt = crypto.randomBytes(16);
-  const iv = crypto.randomBytes(12);
-  const key = crypto.pbkdf2Sync(pass, salt, ITERATIONS, 32, 'sha256');
-  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-  const payload = JSON.stringify({ owner: m[1], repo: m[2], branch: info.default_branch || 'main', token });
-  const ct = Buffer.concat([cipher.update(payload, 'utf8'), cipher.final(), cipher.getAuthTag()]);
+  let vPass = '';
+  if (vToken) {
+    const vSug = makePass();
+    console.log(`\nSuggested guest password:  ${vSug}`);
+    const vTyped = await ask('Press Enter to use it, or type your own: ', false);
+    vPass = vTyped || vSug;
+    if (vPass.length < 12) {
+      console.error('\nToo short — same reason as the team one.');
+      closeInput(); process.exit(1);
+    }
+    if (vPass === pass) {
+      console.error('\nThe two passwords must differ, or nobody can sign in as a guest: the');
+      console.error('team blob is tried first and would always win.');
+      closeInput(); process.exit(1);
+    }
+  }
 
-  const line = 'const GHENC=' + JSON.stringify({
-    salt: salt.toString('base64'), iv: iv.toString('base64'),
-    ct: ct.toString('base64'), it: ITERATIONS,
-  }) + ';';
+  /* WebCrypto expects the GCM tag appended to the ciphertext, which is why the tag is
+     concatenated on rather than shipped beside it. There is a test for exactly that interop. */
+  const seal = (secret, tok) => {
+    const salt = crypto.randomBytes(16);
+    const iv = crypto.randomBytes(12);
+    const key = crypto.pbkdf2Sync(secret, salt, ITERATIONS, 32, 'sha256');
+    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+    const payload = JSON.stringify({ owner: m[1], repo: m[2], branch: info.default_branch || 'main', token: tok });
+    const ct = Buffer.concat([cipher.update(payload, 'utf8'), cipher.final(), cipher.getAuthTag()]);
+    return JSON.stringify({
+      salt: salt.toString('base64'), iv: iv.toString('base64'),
+      ct: ct.toString('base64'), it: ITERATIONS,
+    });
+  };
 
   const html = fs.readFileSync(FILE, 'utf8');
   if (!/^const GHENC=.*;$/m.test(html)) {
     console.error('\nCould not find the "const GHENC=...;" line in index.html.');
     closeInput(); process.exit(1);
   }
-  fs.writeFileSync(FILE, html.replace(/^const GHENC=.*;$/m, line.replace(/\$/g, '$$$$')));
+  if (!/^const GHVIEW=.*;$/m.test(html)) {
+    console.error('\nCould not find the "const GHVIEW=...;" line in index.html.');
+    closeInput(); process.exit(1);
+  }
+  let out = html.replace(/^const GHENC=.*;$/m,
+    ('const GHENC=' + seal(pass, token) + ';').replace(/\$/g, '$$$$'));
+  out = out.replace(/^const GHVIEW=.*;$/m,
+    ('const GHVIEW=' + (vToken ? seal(vPass, vToken) : 'null') + ';').replace(/\$/g, '$$$$'));
+  fs.writeFileSync(FILE, out);
 
-  /* never ship the plaintext by accident */
+  /* never ship a plaintext token by accident */
   const after = fs.readFileSync(FILE, 'utf8');
-  if (after.includes(token)) {
-    console.error('\nABORT: the raw token ended up in index.html. Restoring.');
+  const leaked = after.includes(token) ? 'team' : (vToken && after.includes(vToken)) ? 'guest' : '';
+  if (leaked) {
+    console.error(`\nABORT: the raw ${leaked} token ended up in index.html. Restoring.`);
     fs.writeFileSync(FILE, html);
     closeInput(); process.exit(1);
   }
 
   console.log('\n' + '='.repeat(38));
-  console.log('index.html updated. The token is encrypted; the plaintext is not in the file.');
-  console.log('\n  TEAM PASSWORD:  ' + pass);
-  console.log('\nSave that somewhere safe and share it with whoever needs the board.');
-  console.log('It is not stored anywhere — if it is lost, run this script again.');
+  console.log('index.html updated. Both tokens are encrypted; neither plaintext is in the file.');
+  console.log('\n  TEAM PASSWORD:   ' + pass + '   (full access)');
+  if (vToken) console.log('  GUEST PASSWORD:  ' + vPass + '   (read-only)');
+  else console.log('  GUEST PASSWORD:  none — guest sign-in is off in this build');
+  console.log('\nSave those somewhere safe. They are not stored anywhere — if one is lost,');
+  console.log('run this script again. Changing a password invalidates every device PIN, so');
+  console.log('everyone types their password once more and picks a new PIN.');
   console.log('\nNext: commit and push index.html, then anyone with the link can sign in.');
 }
 
