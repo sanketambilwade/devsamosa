@@ -1418,6 +1418,16 @@ const GHENC={"salt":"t6XrtJnpisyDmIM5NV86wQ==","iv":"5VFv6j4I7AocjAiL","ct":"4Rn
    tidiness on top of it — a guest who opens devtools and lifts the token still gets a 403.
    null until setup-shared-login.js has been given a read-only token. */
 const GHVIEW=null;
+/* The board a guest sees. Every name and project in here is invented, and has to be: this file
+   is public, and the whole point of the sample board is that it can be handed to a stranger.
+   For a trial it is also the better answer than the real one — somebody evaluating the tool
+   gets a full week of a plausible team without being shown a real team's work.
+
+   Dates are offsets in working days, resolved at sign-in, so the sample is never stale. Nothing
+   here is ever written anywhere: demo mode runs the store in memory, never calls GitHub, and
+   never decrypts the team's token. */
+const DEMO={"people":[{"id":"dp00","name":"Sasha","role":"LD 1","avail":"","sprite":0,"desk":0},{"id":"dp01","name":"Jonas","role":"LD 2","avail":"","sprite":1},{"id":"dp02","name":"Ana","role":"SDE 3","avail":"","sprite":2},{"id":"dp03","name":"Ben","role":"SDE 2","avail":"","sprite":3},{"id":"dp04","name":"Chidi","role":"SDE 2","avail":"","sprite":4},{"id":"dp05","name":"Dara","role":"SDE 1","avail":"","sprite":5},{"id":"dp06","name":"Emil","role":"SDE 3","avail":"","sprite":6},{"id":"dp07","name":"Farid","role":"SDE 2","avail":"","sprite":7},{"id":"dp08","name":"Gus","role":"SDE 1","avail":"","sprite":8},{"id":"dp09","name":"Hugo","role":"SDE 2","avail":"","sprite":9},{"id":"dp10","name":"Mira","role":"SDE 3","avail":"","sprite":10},{"id":"dp11","name":"Noel","role":"SDE 1","avail":"","sprite":11},{"id":"dp12","name":"Omar","role":"SDE 2","avail":"","sprite":12},{"id":"dp13","name":"Piet","role":"Intern","avail":"","sprite":13},{"id":"dp14","name":"Rafa","role":"SDE 2","avail":"","sprite":14},{"id":"dp15","name":"Tomas","role":"SDE 1","avail":"","sprite":15},{"id":"dp16","name":"Yusuf","role":"SDE 3","avail":"","sprite":16},{"id":"dp17","name":"Zane","role":"Intern","avail":"","sprite":3}],"projects":[{"id":"dj0","name":"Lighthouse","color":"#0A84FF"},{"id":"dj1","name":"Northwind","color":"#30D158"},{"id":"dj2","name":"Kestrel","color":"#FF9F0A"},{"id":"dj3","name":"Foxglove","color":"#BF5AF2"},{"id":"dj4","name":"Meridian","color":"#40C8E0"},{"id":"dj5","name":"Bluebird","color":"#FF375F"}],"updates":[{"id":"du001","d":0,"personId":"dp00","projectId":"dj0","task":"Chasing a layout bug that only shows on tablets","est":0,"spent":0,"status":"progress"},{"id":"du002","d":0,"personId":"dp01","projectId":"dj1","task":"Second pass on the permissions model","est":0,"spent":0,"status":"progress"},{"id":"du003","d":0,"personId":"dp06","projectId":"dj0","task":"Splitting the settings screen into two","est":0,"spent":0,"status":"progress"},{"id":"du004","d":0,"personId":"dp09","projectId":"dj3","task":"Splitting the settings screen into two","est":0,"spent":0,"status":"progress"},{"id":"du005","d":0,"personId":"dp10","projectId":"dj4","task":"Blocked on the sandbox credentials","est":0,"spent":0,"status":"blocked"},{"id":"du006","d":0,"personId":"dp11","projectId":"dj5","task":"Making the importer forgive a missing header row","est":0,"spent":0,"status":"progress"},{"id":"du007","d":0,"personId":"dp12","projectId":"dj0","task":"Reviewing the migration script before it goes near staging","est":0,"spent":0,"status":"planned"},{"id":"du008","d":0,"personId":"dp13","projectId":"dj1","task":"Batching the audit writes","est":0,"spent":0,"status":"progress"},{"id":"du009","d":0,"personId":"dp14","projectId":"dj2","task":"Cleaning up the feature flags we no longer read","est":0,"spent":0,"status":"progress"},{"id":"du010","d":0,"personId":"dp15","projectId":"dj3","task":"Adding retries around the upload step","est":0,"spent":0,"status":"planned"},{"id":"du011","d":0,"personId":"dp16","projectId":"dj4","task":"Second pass on the permissions model","est":0,"spent":0,"status":"done"},{"id":"du012","d":0,"personId":"dp17","projectId":"dj5","task":"Writing tests for the date parser","est":0,"spent":0,"status":"done"},{"id":"du013","d":1,"personId":"dp00","projectId":"dj0","task":"Rebuilding the notification preferences","est":0,"spent":0,"status":"progress"},{"id":"du014","d":1,"personId":"dp01","projectId":"dj1","task":"Blocked on the sandbox credentials","est":0,"spent":0,"status":"blocked"},{"id":"du015","d":1,"personId":"dp02","projectId":"dj2","task":"Waiting on design for the empty states","est":0,"spent":0,"status":"blocked"},{"id":"du016","d":1,"personId":"dp03","projectId":"dj3","task":"Draft of the API docs for the partner team","est":0,"spent":0,"status":"progress"},{"id":"du017","d":1,"personId":"dp04","projectId":"dj4","task":"Adding retries around the upload step","est":0,"spent":0,"status":"progress"},{"id":"du018","d":1,"personId":"dp05","projectId":"dj5","task":"Waiting on design for the empty states","est":0,"spent":0,"status":"blocked"},{"id":"du019","d":1,"personId":"dp06","projectId":"dj0","task":"Waiting on design for the empty states","est":0,"spent":0,"status":"blocked"},{"id":"du020","d":1,"personId":"dp07","projectId":"dj1","task":"Writing tests for the date parser","est":0,"spent":0,"status":"progress"},{"id":"du021","d":1,"personId":"dp08","projectId":"","task":"","est":0,"spent":0,"status":"ooo"},{"id":"du022","d":1,"personId":"dp09","projectId":"dj3","task":"Waiting on design for the empty states","est":0,"spent":0,"status":"blocked"},{"id":"du023","d":1,"personId":"dp10","projectId":"dj4","task":"Wiring the export dialog to the new endpoint","est":0,"spent":0,"status":"done"},{"id":"du024","d":1,"personId":"dp11","projectId":"dj5","task":"Blocked on the sandbox credentials","est":0,"spent":0,"status":"blocked"},{"id":"du025","d":1,"personId":"dp12","projectId":"dj0","task":"Second pass on the permissions model","est":0,"spent":0,"status":"progress"},{"id":"du026","d":1,"personId":"dp13","projectId":"dj1","task":"Profiling the dashboard load \u2014 it is the chart, not the query","est":0,"spent":0,"status":"progress"},{"id":"du027","d":1,"personId":"dp14","projectId":"dj2","task":"Blocked on the sandbox credentials","est":0,"spent":0,"status":"blocked"},{"id":"du028","d":1,"personId":"dp15","projectId":"dj3","task":"Waiting on design for the empty states","est":0,"spent":0,"status":"blocked"},{"id":"du029","d":1,"personId":"dp16","projectId":"dj4","task":"Blocked on the sandbox credentials","est":0,"spent":0,"status":"blocked"},{"id":"du030","d":1,"personId":"dp17","projectId":"dj5","task":"Fixing the timezone off-by-one in the weekly digest","est":0,"spent":0,"status":"progress"},{"id":"du031","d":2,"personId":"dp00","projectId":"dj0","task":"Batching the audit writes","est":0,"spent":0,"status":"progress"},{"id":"du032","d":2,"personId":"dp01","projectId":"dj1","task":"Wiring the export dialog to the new endpoint","est":0,"spent":0,"status":"done"},{"id":"du033","d":2,"personId":"dp02","projectId":"dj2","task":"Fixing the timezone off-by-one in the weekly digest","est":0,"spent":0,"status":"progress"},{"id":"du034","d":2,"personId":"dp03","projectId":"dj3","task":"Swapping the old icon set out","est":0,"spent":0,"status":"planned"},{"id":"du035","d":2,"personId":"dp04","projectId":"dj4","task":"Writing tests for the date parser","est":0,"spent":0,"status":"progress"},{"id":"du036","d":2,"personId":"dp05","projectId":"dj5","task":"Pairing on the search index rebuild","est":0,"spent":0,"status":"progress"},{"id":"du037","d":2,"personId":"dp06","projectId":"dj0","task":"Writing tests for the date parser","est":0,"spent":0,"status":"planned"},{"id":"du038","d":2,"personId":"dp07","projectId":"dj1","task":"Cutting the release branch and tagging it","est":0,"spent":0,"status":"progress"},{"id":"du039","d":2,"personId":"dp08","projectId":"dj2","task":"Blocked on the sandbox credentials","est":0,"spent":0,"status":"blocked"},{"id":"du040","d":2,"personId":"dp09","projectId":"dj3","task":"Blocked on the sandbox credentials","est":0,"spent":0,"status":"blocked"},{"id":"du041","d":2,"personId":"dp10","projectId":"dj4","task":"Rebuilding the notification preferences","est":0,"spent":0,"status":"progress"},{"id":"du042","d":2,"personId":"dp11","projectId":"dj5","task":"Pairing on the search index rebuild","est":0,"spent":0,"status":"planned"},{"id":"du043","d":2,"personId":"dp12","projectId":"dj0","task":"Swapping the old icon set out","est":0,"spent":0,"status":"progress"},{"id":"du044","d":2,"personId":"dp13","projectId":"dj1","task":"Second pass on the permissions model","est":0,"spent":0,"status":"progress"},{"id":"du045","d":2,"personId":"dp14","projectId":"dj2","task":"Reviewing the migration script before it goes near staging","est":0,"spent":0,"status":"progress"},{"id":"du046","d":2,"personId":"dp15","projectId":"","task":"","est":0,"spent":0,"status":"ooo"},{"id":"du047","d":2,"personId":"dp16","projectId":"dj4","task":"Wiring the export dialog to the new endpoint","est":0,"spent":0,"status":"progress"},{"id":"du048","d":2,"personId":"dp17","projectId":"dj5","task":"Splitting the settings screen into two","est":0,"spent":0,"status":"planned"},{"id":"du049","d":3,"personId":"dp00","projectId":"dj0","task":"Cutting the release branch and tagging it","est":0,"spent":0,"status":"planned"},{"id":"du050","d":3,"personId":"dp01","projectId":"dj1","task":"Chasing a layout bug that only shows on tablets","est":0,"spent":0,"status":"done"},{"id":"du051","d":3,"personId":"dp02","projectId":"dj2","task":"Pairing on the search index rebuild","est":0,"spent":0,"status":"done"},{"id":"du052","d":3,"personId":"dp03","projectId":"dj3","task":"Reviewing the migration script before it goes near staging","est":0,"spent":0,"status":"progress"},{"id":"du053","d":3,"personId":"dp04","projectId":"dj4","task":"Fixing the timezone off-by-one in the weekly digest","est":0,"spent":0,"status":"progress"},{"id":"du054","d":3,"personId":"dp05","projectId":"dj5","task":"Rebuilding the notification preferences","est":0,"spent":0,"status":"progress"},{"id":"du055","d":3,"personId":"dp06","projectId":"dj0","task":"Writing tests for the date parser","est":0,"spent":0,"status":"progress"},{"id":"du056","d":3,"personId":"dp07","projectId":"dj2","task":"","est":0,"spent":0,"status":"notcall"},{"id":"du057","d":3,"personId":"dp08","projectId":"dj2","task":"Pairing on the search index rebuild","est":0,"spent":0,"status":"progress"},{"id":"du058","d":3,"personId":"dp09","projectId":"dj3","task":"Draft of the API docs for the partner team","est":0,"spent":0,"status":"done"},{"id":"du059","d":3,"personId":"dp10","projectId":"dj4","task":"Rebuilding the notification preferences","est":0,"spent":0,"status":"progress"},{"id":"du060","d":3,"personId":"dp11","projectId":"","task":"","est":0,"spent":0,"status":"ooo"},{"id":"du061","d":3,"personId":"dp12","projectId":"dj0","task":"Chasing a layout bug that only shows on tablets","est":0,"spent":0,"status":"progress"},{"id":"du062","d":3,"personId":"dp13","projectId":"dj1","task":"Chasing a layout bug that only shows on tablets","est":0,"spent":0,"status":"progress"},{"id":"du063","d":3,"personId":"dp14","projectId":"dj2","task":"Chasing a layout bug that only shows on tablets","est":0,"spent":0,"status":"progress"},{"id":"du064","d":3,"personId":"dp15","projectId":"dj3","task":"Adding retries around the upload step","est":0,"spent":0,"status":"planned"},{"id":"du065","d":3,"personId":"dp16","projectId":"dj4","task":"Writing tests for the date parser","est":0,"spent":0,"status":"progress"},{"id":"du066","d":3,"personId":"dp17","projectId":"dj5","task":"Adding retries around the upload step","est":0,"spent":0,"status":"progress"},{"id":"du067","d":4,"personId":"dp00","projectId":"dj0","task":"Cleaning up the feature flags we no longer read","est":0,"spent":0,"status":"progress"},{"id":"du068","d":4,"personId":"dp01","projectId":"dj1","task":"Waiting on design for the empty states","est":0,"spent":0,"status":"blocked"},{"id":"du069","d":4,"personId":"dp02","projectId":"dj2","task":"Writing tests for the date parser","est":0,"spent":0,"status":"progress"},{"id":"du070","d":4,"personId":"dp03","projectId":"dj3","task":"Splitting the settings screen into two","est":0,"spent":0,"status":"progress"},{"id":"du071","d":4,"personId":"dp04","projectId":"dj4","task":"Splitting the settings screen into two","est":0,"spent":0,"status":"progress"},{"id":"du072","d":4,"personId":"dp05","projectId":"dj5","task":"Profiling the dashboard load \u2014 it is the chart, not the query","est":0,"spent":0,"status":"planned"},{"id":"du073","d":4,"personId":"dp06","projectId":"dj0","task":"Wiring the export dialog to the new endpoint","est":0,"spent":0,"status":"done"},{"id":"du074","d":4,"personId":"dp07","projectId":"dj0","task":"","est":0,"spent":0,"status":"notcall"},{"id":"du075","d":4,"personId":"dp08","projectId":"dj2","task":"Splitting the settings screen into two","est":0,"spent":0,"status":"planned"},{"id":"du076","d":4,"personId":"dp09","projectId":"dj3","task":"Swapping the old icon set out","est":0,"spent":0,"status":"planned"},{"id":"du077","d":4,"personId":"dp10","projectId":"dj4","task":"Adding retries around the upload step","est":0,"spent":0,"status":"progress"},{"id":"du078","d":4,"personId":"dp11","projectId":"dj5","task":"Adding retries around the upload step","est":0,"spent":0,"status":"done"},{"id":"du079","d":4,"personId":"dp12","projectId":"dj0","task":"Blocked on the sandbox credentials","est":0,"spent":0,"status":"blocked"},{"id":"du080","d":4,"personId":"dp13","projectId":"dj5","task":"","est":0,"spent":0,"status":"notcall"},{"id":"du081","d":4,"personId":"dp14","projectId":"dj2","task":"Second pass on the permissions model","est":0,"spent":0,"status":"done"},{"id":"du082","d":4,"personId":"dp15","projectId":"dj3","task":"Blocked on the sandbox credentials","est":0,"spent":0,"status":"blocked"},{"id":"du083","d":4,"personId":"dp16","projectId":"dj3","task":"","est":0,"spent":0,"status":"notcall"},{"id":"du084","d":4,"personId":"dp17","projectId":"dj5","task":"Fixing the timezone off-by-one in the weekly digest","est":0,"spent":0,"status":"done"}],"allocs":[{"id":"da001","personId":"dp00","projectId":"dj0","s":1,"e":3,"pct":100,"note":""},{"id":"da002","personId":"dp00","projectId":"dj1","s":0,"e":6,"pct":100,"note":""},{"id":"da003","personId":"dp01","projectId":"dj2","s":3,"e":12,"pct":100,"note":""},{"id":"da004","personId":"dp02","projectId":"dj4","s":-2,"e":7,"pct":100,"note":""},{"id":"da005","personId":"dp03","projectId":"dj0","s":-2,"e":2,"pct":100,"note":""},{"id":"da006","personId":"dp03","projectId":"dj1","s":-4,"e":2,"pct":100,"note":""},{"id":"da007","personId":"dp04","projectId":"dj2","s":1,"e":10,"pct":100,"note":""},{"id":"da008","personId":"dp04","projectId":"dj3","s":1,"e":7,"pct":100,"note":""},{"id":"da009","personId":"dp05","projectId":"dj4","s":0,"e":2,"pct":100,"note":""},{"id":"da010","personId":"dp06","projectId":"dj0","s":1,"e":10,"pct":100,"note":""},{"id":"da011","personId":"dp06","projectId":"dj1","s":-4,"e":5,"pct":100,"note":""},{"id":"da012","personId":"dp07","projectId":"dj2","s":3,"e":5,"pct":100,"note":""},{"id":"da013","personId":"dp08","projectId":"dj4","s":3,"e":7,"pct":100,"note":""},{"id":"da014","personId":"dp09","projectId":"dj0","s":3,"e":9,"pct":100,"note":""},{"id":"da015","personId":"dp10","projectId":"dj2","s":3,"e":7,"pct":100,"note":""},{"id":"da016","personId":"dp11","projectId":"dj4","s":3,"e":5,"pct":100,"note":""},{"id":"da017","personId":"dp12","projectId":"dj0","s":-4,"e":5,"pct":100,"note":""},{"id":"da018","personId":"dp13","projectId":"dj2","s":3,"e":12,"pct":100,"note":""},{"id":"da019","personId":"dp14","projectId":"dj4","s":1,"e":7,"pct":100,"note":""},{"id":"da020","personId":"dp14","projectId":"dj5","s":1,"e":10,"pct":100,"note":""},{"id":"da021","personId":"dp15","projectId":"dj0","s":1,"e":10,"pct":100,"note":""},{"id":"da022","personId":"dp16","projectId":"dj2","s":1,"e":10,"pct":100,"note":""},{"id":"da023","personId":"dp17","projectId":"dj4","s":1,"e":10,"pct":100,"note":""},{"id":"da024","personId":"dp17","projectId":"dj5","s":0,"e":4,"pct":100,"note":""}]};
+
 
 async function ghKey(pass,salt,it){
   const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),
@@ -1457,7 +1467,10 @@ async function ghUnlockAny(pass){
   if(GHENC){try{return{cfg:await ghUnlock(pass),role:'admin'}}catch(e){}}
   if(GHVIEW){try{
     const cfg=await ghOpen(pass,GHVIEW);
-    if(cfg.owner&&cfg.repo&&cfg.token)return{cfg,role:'viewer'};
+    /* Two shapes of guest. With a read-only token it is the real board, read-only. With
+       {demo:1} and no token at all it is the sample board and nothing is ever fetched — which
+       needs no second GitHub token, and is the one you can hand to a stranger. */
+    if(cfg.demo||(cfg.owner&&cfg.repo&&cfg.token))return{cfg,role:'viewer'};
   }catch(e){}}
   return null;
 }
@@ -1763,16 +1776,47 @@ function ghTeamLock(){
     const r=await ghUnlockAny(pw);
     if(!r){$('#go').disabled=false;return fail('That password is not right')}
     if(r.role==='admin')return ghPinNew(r.cfg);
+    if(r.cfg.demo)return demoStart();
     /* A guest is a visitor: no PIN, nothing sealed into their browser, and the session goes
        when the tab does. They retype the password next time, which is what you want from
        something you hand out for a trial. */
     Object.assign(GH,{owner:r.cfg.owner,repo:r.cfg.repo,
       branch:r.cfg.branch||'main',token:r.cfg.token});
-    ghMemSave(r.cfg);
+    ghMemSave({...r.cfg,role:'viewer'});
     await setSession('guest','viewer'); ADMIN=false;
     await ghStart();
   };
   setTimeout(()=>{const f=$('#tp');f&&f.focus()},240);
+}
+
+/* The sample board, with its working-day offsets resolved against today so a guest never
+   opens it on a week that ended months ago. */
+function demoBoard(){
+  const days=[]; let d=D.today();
+  for(let i=0;i<8;i++){days.push(d); d=prevWork(D.add(d,-1))}
+  const b=JSON.parse(JSON.stringify(DEMO));
+  b.updates.forEach(u=>{u.date=days[u.d]||days[days.length-1]; delete u.d});
+  b.allocs.forEach(a=>{
+    a.start=nextWork(D.add(D.today(),a.s));
+    a.end=nextWork(D.add(D.today(),a.e));
+    delete a.s; delete a.e;
+  });
+  b.roster=b.people.map(p=>p.name);
+  b.carried=[];
+  return b;
+}
+/* A guest on the sample board. Nothing is fetched and nothing is kept: the store goes to
+   memory, so every write path in the app has somewhere harmless to land, and closing the tab is
+   the end of it. GH.token is never set, because in this mode it was never decrypted. */
+async function demoStart(){
+  if(GH.poll)clearInterval(GH.poll);
+  STORE.mode='memory'; STORE.label='Sample board'; MEM={};
+  DB={...DB,...demoBoard(),user:'guest',pass:'',recovery:'',v:2,authV:3,dataV:2};
+  ADMIN=false;
+  ghMemSave({demo:1});
+  await setSession('guest','viewer');
+  enter();
+  toast('Sample board — a copy for looking round. Nothing here is saved.');
 }
 
 /* a keypad-friendly field: type=password keeps it hidden, inputmode drives the
@@ -3906,6 +3950,7 @@ async function snapshot(label){
   await snapWrite(JSON.stringify(list.slice(0,6)));
 }
 async function autoSnapshot(){
+  if(!ADMIN)return;                     /* a guest's board is not theirs to back up */
   if(!DB.updates.length&&!DB.allocs.length)return;
   const list=await snapshots();
   if(list.length&&Date.now()-list[0].ts<12*36e5)return;
@@ -4808,11 +4853,16 @@ function seed(){
     if(GHENC){
       STORE.mode='github';STORE.label='Team repo';
       const live=ghMemLoad();
+      /* Same app session — a refresh should not ask for anything. The role rides along with
+         it: without that a guest who pressed reload came back as an admin, which is the sort
+         of hole that only shows up once somebody actually uses the guest link. */
+      if(live&&live.demo){await demoStart();return}
       if(live&&live.token){
-        /* still the same app session — a refresh should not ask for anything */
+        const viewer=live.role==='viewer';
         Object.assign(GH,{owner:live.owner,repo:live.repo,
           branch:live.branch||'main',token:live.token});
-        await setSession('team','admin');ADMIN=true;
+        await setSession(viewer?'guest':'team',viewer?'viewer':'admin');
+        ADMIN=!viewer;
         await ghStart();
         return;
       }

@@ -110,9 +110,17 @@ strong enough for the encrypted blob to be published, and short enough to read o
 If you want to show the board to someone — a trial, a demo, another team — they can have a
 **guest password**. They see everything and can change nothing.
 
-It needs a **second token**, and that is the point. Make one the same way as step 3, but set
-**Contents: Read-only**. Then re-run the setup script and give it that token when it asks for
-the read-only one. It checks the token really cannot write before it will use it.
+Re-run `node setup-shared-login.js` and it offers two kinds:
+
+**1 — Sample board.** No token, nothing to set up. The guest password opens a built-in demo
+team: invented people, invented projects, a week of invented work, held in memory. Your
+repository is never called and your token is never decrypted, so this one is safe to give to
+anybody at all. They see the product working; they do not see your team.
+
+**2 — Your real board, read-only.** Needs a second token: make one the same way as step 3 but
+set **Contents: Read-only**. They see your actual updates and cannot change them — and neither
+can anyone who lifts that token out of the published page, because GitHub refuses the write.
+The script checks the token really cannot push before it will use it.
 
 The two passwords then do different things:
 
