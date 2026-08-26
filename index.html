@@ -2339,7 +2339,12 @@ function boot2(){
   if(go)go.onclick=async()=>{
     if(GH.poll)clearInterval(GH.poll);
     await clearSession();ghMemForget();GH.token='';ADMIN=false;
-    ghTeamLock();
+    /* Back to whichever screen this device actually uses. It went straight to the passphrase,
+       which is right on a shared laptop and wrong on the owner's own: signing out of a guest
+       session never drops the sealed PIN copy, so asking for the full passphrase when the PIN
+       is sitting right there is the same complaint the PIN exists to answer. A reload landed
+       on the right screen already; this makes the button agree with it. */
+    ghPinBox()?ghPinLock():ghTeamLock();
   };
   if(typeof SEED!=='undefined'&&!DB.people.length){
     const r=mergeSeed();save();render();
