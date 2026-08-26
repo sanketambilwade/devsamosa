@@ -651,23 +651,35 @@ td.n,th.n{text-align:right;white-space:nowrap}
   white-space:nowrap;overflow:hidden}
 .ofc-bpr i{width:5px;height:5px;border-radius:50%;flex:0 0 auto;border:1px solid rgba(34,32,30,.45)}
 .ofc-bpr.none{color:#b3a992}
-.ofc-bst{margin:2px 6px 7px;padding:4px 0;width:calc(100% - 12px);border:0;background:none;
-  border-top:2px dashed #d8cfb6;display:flex;align-items:center;justify-content:center;gap:5px;
+/* The vertical padding belongs to the select, not to this line, so the whole strip is the
+   control. With it here the select's own box was 8.5px tall, every click that missed landed on
+   the wrapper and did nothing, and the card looked broken on a laptop while working on a phone
+   — where a 28px tap target covers most of the row. The line is the same height either way. */
+.ofc-bst{margin:2px 6px 7px;padding:0;width:calc(100% - 12px);border:0;background:none;
+  border-top:2px dashed #d8cfb6;display:flex;align-items:stretch;justify-content:center;gap:5px;
   cursor:pointer;font-family:var(--sans)}
-.ofc-bst i{width:6px;height:6px;border-radius:50%;background:var(--green);display:block}
-/* Somebody on the roster but not on the board: they have a desk and a card, but there is no
-   row in Today to mark them out of office, so the line is printed rather than chosen. It still
-   has to read as the same line — same words, same green, same width. It used to say IN OFFICE
-   in grey, which named a state nothing else in the app uses and, being two words longer than
-   WORKING, was the one line on the rail wide enough to touch both edges of a phone-sized card. */
-.ofc-bst.gst{cursor:default;color:var(--green);font:700 8.5px/1 var(--sans);letter-spacing:.6px}
+.ofc-bst i{width:6px;height:6px;border-radius:50%;background:var(--green);display:block;
+  align-self:center}
+/* A guest is looking, not editing, so their line is printed rather than chosen. It reads as
+   the same line either way — same words, same green, same box. (It used to say IN OFFICE in
+   grey for anyone on the roster but not on the board; they get the real control now, and the
+   printed line is only ever the read-only case.) */
+/* nothing here to carry the padding, so the printed line keeps its own */
+.ofc-bst.gst{cursor:default;align-items:center;padding:4px 0;
+  color:var(--green);font:700 8.5px/1 var(--sans);letter-spacing:.6px}
 .ofc-face.gst{cursor:default}
 /* the field rules further up give every select a box, a chevron and width:100%; on a 104px
    badge it has to read as the printed line it replaced, so all of that is undone here */
+/* It fills the line rather than sitting in the middle of it. At 8.5px with width:auto the
+   hit area was 47x8.5 — four hundred square pixels, most of a mouse click away from anything,
+   and every miss landed on the wrapper and did nothing. That is why this worked on a phone,
+   where the 28px tap target covers most of the row, and not on a laptop. */
 .ofc-bsel{-webkit-appearance:none;appearance:none;background:none;background-image:none;
-  border:0;padding:0;width:auto;outline:none;cursor:pointer;
+  border:0;padding:4px 0;outline:none;cursor:pointer;
+  flex:1 1 auto;width:auto;min-width:0;
   text-align:center;text-align-last:center;
   font:700 8.5px/1 var(--sans);letter-spacing:.6px;color:var(--green)}
+.ofc-bsel:hover{background:rgba(34,32,30,.06);border-radius:3px}
 .ofc-bsel:focus{box-shadow:none}
 .ofc-bsel:focus-visible{outline:2px solid var(--saffron);outline-offset:2px;border-radius:3px}
 .ofc-badge.out .ofc-bst i{background:var(--purple)}
@@ -715,7 +727,8 @@ td.n,th.n{text-align:right;white-space:nowrap}
   /* The select carries a 28px tap target here, which makes its line 36px tall. The printed
      line has to reserve the same, or the four roster cards stop 20px short of the rest of the
      rail and the row reads as ragged along the bottom. One number, both variants. */
-  .ofc-bst{margin:1px 5px 4px;padding:3px 0;min-height:36px}
+  .ofc-bst{margin:1px 5px 4px;padding:0;min-height:36px}
+  .ofc-bst.gst{padding:3px 0}
   /* A select opens a picker on iOS rather than a keyboard, so it does not trigger the
      zoom-on-focus that the blanket 16px rule further up exists to prevent. */
   .ofc-bsel,.ofc-bst.gst{font-size:9px!important;letter-spacing:.3px}
@@ -1199,7 +1212,7 @@ header{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
 /* ==================== config ==================== */
 const KEY='devsamosa:v1', OLD='teampulse:v1', SESS='devsamosa:session';
 const SHARED=true, SESSION_HOURS=12;
-let DB={v:2,authV:0,dataV:0,user:'',pass:'',recovery:'',roster:[],people:[],projects:[],updates:[],allocs:[]};
+let DB={v:2,authV:0,dataV:0,user:'',pass:'',recovery:'',roster:[],people:[],projects:[],updates:[],allocs:[],away:{}};
 let ME=null, ADMIN=false, view='office', THEME='light';
 const PAL=['#0A84FF','#FF9F0A','#BF5AF2','#30D158','#FF375F','#40C8E0','#FF6B35','#5E5CE6','#FFD60A','#64D2FF'];
 
@@ -1613,9 +1626,13 @@ function ghIds(db){
 }
 function ghSplit(db){
   const out={},by={};
+  /* `away` is the office's own out-of-office list for people who have no Today row to carry
+     it (see setAway). It is small, it is shared, and it belongs with the roster rather than in
+     anybody's shard — the ids in it are not shard keys. */
   out[SHFILE]=JSON.stringify({v:db.v,authV:db.authV,dataV:db.dataV,
     user:db.user,pass:db.pass,recovery:db.recovery,roster:db.roster||[],
-    people:db.people||[],projects:db.projects||[],sprint:db.sprint},null,1);
+    people:db.people||[],projects:db.projects||[],sprint:db.sprint,
+    away:db.away||{}},null,1);
   ghIds(db).forEach(id=>by[id]={updates:[],allocs:[]});
   (db.updates||[]).forEach(u=>{const b=by[u.personId];if(b)b.updates.push(u)});
   (db.allocs||[]).forEach(a=>{const b=by[a.personId];if(b)b.allocs.push(a)});
@@ -2871,14 +2888,30 @@ const spriteOf=p=>FACEOF.has(p.id)?FACEOF.get(p.id)
    nothing is ever written back to the board for them. */
 const GUEST='roster:';
 const isGuest=id=>String(id).indexOf(GUEST)===0;
+/* pname() only knows the board, and half the floor is not on it */
+const castName=id=>isGuest(id)?id.slice(GUEST.length):pname(id);
+/* Who is out today, from both of the places it can be written. Somebody on the board carries it
+   on their Today row, which is where the Standup screen sets it. Somebody who is only on the
+   roster has no row to carry it, so the office keeps its own list — keyed by date, so tomorrow
+   starts everybody back in, and holding nothing but ids. */
+function awayIds(){
+  const t=D.today();
+  const s=new Set(DB.updates.filter(u=>u.date===t&&u.status==='ooo').map(u=>u.personId));
+  ((DB.away||{})[t]||[]).forEach(id=>s.add(id));
+  return s;
+}
+/* the office only ever draws today, so older days are dead weight in shared.json */
+function pruneAway(){
+  const cut=D.add(D.today(),-30), m=DB.away||{};
+  Object.keys(m).forEach(d=>{if(d<cut)delete m[d]});
+}
 function floorCast(){
   const on=new Set(DB.people.map(p=>p.name));
   return DB.people.concat((DB.roster||[]).filter(n=>!on.has(n))
     .map(n=>({id:GUEST+n,name:n,role:'',guest:true})));
 }
 function build(){
-  const today=D.today();
-  const away=new Set(DB.updates.filter(u=>u.date===today&&u.status==='ooo').map(u=>u.personId));
+  const away=awayIds();
   /* The manager desk is one person's, or nobody's — never handed out by roster order. Everyone
      else fills the rows in turn, and if the team outgrows the desks the spare standing places
      in the meeting room take the rest, so nobody is dropped off the picture. */
@@ -2923,14 +2956,25 @@ function portrait(p){
 const todayRow=pid=>DB.updates.find(u=>u.date===D.today()&&u.personId===pid);
 function setAway(pid,away){
   if(!need())return;
-  const u=todayRow(pid);
-  if(away){
-    if(u)u.status='ooo';
-    else DB.updates.push({id:uid(),date:D.today(),personId:pid,projectId:'',task:'',
-      est:0,spent:0,status:'ooo'});
-  }else if(u&&u.status==='ooo')u.status='planned';
+  if(isGuest(pid)){
+    /* Nobody on the roster alone has a Today row, and giving them one would put them in the
+       reports and the exports the user deliberately keeps them out of. The office keeps this
+       one instead: a date, and the ids that are out on it. */
+    const t=D.today(), m=DB.away||(DB.away={});
+    const set=new Set(m[t]||[]);
+    away?set.add(pid):set.delete(pid);
+    if(set.size)m[t]=[...set]; else delete m[t];
+    pruneAway();
+  }else{
+    const u=todayRow(pid);
+    if(away){
+      if(u)u.status='ooo';
+      else DB.updates.push({id:uid(),date:D.today(),personId:pid,projectId:'',task:'',
+        est:0,spent:0,status:'ooo'});
+    }else if(u&&u.status==='ooo')u.status='planned';
+  }
   save();show();
-  toast(pname(pid)+(away?' is out of office today':' is back in'));
+  toast(castName(pid)+(away?' is out of office today':' is back in'));
 }
 function charSheet(pid){
   const p=person(pid); if(!p)return;
@@ -3083,8 +3127,12 @@ function projOf(pid){
 const castOf=()=>floorCast().map(p=>p.id+':'+(p.sprite==null?'':p.sprite)
                                   +':'+(p.desk===0?'m':'')).join('|');
 function railHTML(){
-  return S.map(s=>`
-    <div class="ofc-badge${s.ooo?' out':''}" data-p="${s.p.id}" style="--i:${s.i}">
+  /* Out of office sorts to the end. The row you scroll first should be the people who are
+     actually here, and on a phone that is most of what you see without swiping. The ID number
+     is the person's, not their place in the line, so it does not move with them — only --i,
+     which is the deal-in stagger, counts along the rail as drawn. */
+  return S.slice().sort((a,b)=>(a.ooo?1:0)-(b.ooo?1:0)||a.i-b.i).map((s,k)=>`
+    <div class="ofc-badge${s.ooo?' out':''}" data-p="${s.p.id}" style="--i:${k}">
       <div class="ofc-bhd"><span>ID</span><span>${pad(s.i+1)}</span></div>
       ${(s.p.guest||!ADMIN)?`<div class="ofc-face gst">
         <div class="ofc-frame">${portrait(s.p)}</div></div>`
@@ -3094,13 +3142,16 @@ function railHTML(){
       ${(()=>{const pr=projOf(s.p.id);
         return `<div class="ofc-bpr${pr?'':' none'}" data-act="open" title="${pr?esc(pr.name):'No project yet'}">
           ${pr?`<i style="background:${pr.color}"></i>${esc(pr.name)}`:'—'}</div>`;})()}
-      ${(s.p.guest||!ADMIN)
-        ?`<div class="ofc-bst gst" title="${s.p.guest?'On the roster, not on the board — add them in Team to set a status':'Read-only'}"><i></i>${s.ooo?'OOO':'WORKING'}</div>`
-        :`<label class="ofc-bst" title="Working, or out of office today"><i></i>
+      ${ADMIN
+        /* Everyone on the floor gets this, whether or not they have a Today row — setAway knows
+           where to put it. A div, not a label: clicking a label opens a checkbox but not a
+           select, so every click that missed the control itself did nothing at all. */
+        ?`<div class="ofc-bst" title="Working, or out of office today"><i></i>
         <select class="ofc-bsel" data-act="status" aria-label="${esc(s.p.name)} today">
           <option value="in"${s.ooo?'':' selected'}>WORKING</option>
           <option value="out"${s.ooo?' selected':''}>OOO</option>
-        </select></label>`}
+        </select></div>`
+        :`<div class="ofc-bst gst" title="Read-only"><i></i>${s.ooo?'OOO':'WORKING'}</div>`}
     </div>`).join('');
 }
 function headHTML(m){
@@ -3111,7 +3162,7 @@ function headHTML(m){
 }
 /* who is out can change from Today, and that is not worth a rebuild */
 function refresh(){
-  const away=new Set(DB.updates.filter(u=>u.date===D.today()&&u.status==='ooo').map(u=>u.personId));
+  const away=awayIds();
   S.forEach(s=>{s.ooo=away.has(s.p.id)});
   $('.ofc-rail').innerHTML=railHTML();
   $('#ofccount').textContent=headHTML();
@@ -4550,7 +4601,7 @@ function restoreBackup(file){
        recovery, authV and dataV, and boot then wiped the login on next load */
     DB={...DB,v:2,pass:DB.pass||d.pass||'',
       people:d.people||[],projects:d.projects||[],
-      updates:d.updates||[],allocs:d.allocs||[],
+      updates:d.updates||[],allocs:d.allocs||[],away:d.away||{},
       roster:d.roster&&d.roster.length?d.roster:(DB.roster||[])};
     if(!DB.people.some(p=>p.id===ME))ME=DB.people[0]?DB.people[0].id:null;
     save('Backup restored');render();
