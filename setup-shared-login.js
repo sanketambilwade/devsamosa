@@ -27,7 +27,13 @@ const readline = require('readline');
 const FILE = path.join(__dirname, 'index.html');
 const ITERATIONS = 600000;
 
-/* a passphrase people can actually repeat over a call, still ~77 bits */
+/* A passphrase somebody can repeat over a call. 181 words, so each one is 7.5 bits: five of
+   them is 37, not the 77 this comment used to claim. That is thin for a blob that is published
+   and guards a token which can write — about two days on a hundred GPUs at 600k PBKDF2 rounds.
+   The team gets seven (52 bits, which is centuries on the same hardware); the guest gets five,
+   because a guest blob holds {demo:1} and there is nothing behind it worth a day of anybody's
+   electricity. Lengthening the list would be the other way to do it, but a longer list means
+   rarer words and this one has to survive being dictated. */
 const WORDS = ('able acorn amber anchor apple arrow autumn badge bamboo basket beacon birch ' +
   'bishop bloom bottle branch bridge bronze butter cactus candle canvas canyon carbon castle ' +
   'cedar cherry cinder circle citrus cloud clover cobalt copper coral cotton cradle crater ' +
@@ -45,7 +51,10 @@ const WORDS = ('able acorn amber anchor apple arrow autumn badge bamboo basket b
   'wicker wisp yarrow zephyr zenith').split(/\s+/);
 
 const pick = () => WORDS[crypto.randomInt(0, WORDS.length)];
-const makePass = () => Array.from({ length: 5 }, pick).join('-');
+/* distinct words: the phrase gets read out loud, and a repeat is the thing people mistype */
+const makePass = (n) => { const p = new Set();
+  while (p.size < n) p.add(pick());
+  return [...p].join('-'); };
 
 /* Interactive when run from a terminal, which is the normal way. When stdin is
    a pipe, node's readline only answers the first question and then hangs, so
@@ -121,10 +130,11 @@ async function main() {
   }
   const demo = vAns !== 'n' && vAns !== 'no';
 
-  const suggested = makePass();
+  const suggested = makePass(7);
   console.log(`\nSuggested team password:  ${suggested}`);
-  console.log('  (five random words. Strong enough that the published blob cannot be');
-  console.log('   cracked, and short enough to read out on a call.)');
+  console.log('  (seven random words \u2014 52 bits. The blob is published, so this is an offline');
+  console.log('   attack and the password is the whole of the defence. Five words would be 37,');
+  console.log('   which is about two days on serious hardware.)');
   const typed = await ask('\nPress Enter to use it, or type your own: ', false);
   const pass = typed || suggested;
   if (pass.length < 12) {
@@ -135,7 +145,8 @@ async function main() {
 
   let vPass = '';
   if (demo) {
-    const vSug = makePass();
+    /* five is enough here: the guest blob is {demo:1} and holds no credential at all */
+    const vSug = makePass(5);
     console.log(`\nSuggested guest password:  ${vSug}`);
     const vTyped = await ask('Press Enter to use it, or type your own: ', false);
     vPass = vTyped || vSug;

@@ -110,8 +110,21 @@ strong enough for the encrypted blob to be published, and short enough to read o
 If you want to show the board to someone — a trial, a demo, another team — they can have a
 **guest password**. They see everything and can change nothing.
 
-Re-run `node setup-shared-login.js` and say yes when it offers a guest password. There is
-nothing to set up on GitHub for it.
+```
+node set-guest-password.js
+```
+
+Press Enter to take the suggested passphrase; it prints the password and writes one line of
+`index.html`. Commit and push and the guest sign-in is live.
+
+**That script never asks for your GitHub token**, and does not touch your team password. It
+does not need either: a guest blob carries `{demo:1}` and nothing else — no token, no owner,
+no repository — so there is no secret of yours to seal. `setup-shared-login.js` can set the
+guest password too, but it does the team half in the same run and so it asks for the token
+first; use the small script when the guest password is all you want to change. There is nothing
+to set up on GitHub for it either way.
+
+`node set-guest-password.js --off` takes guest sign-in away again.
 
 The guest password opens a **built-in sample board**: invented people, invented projects, a week
 of invented work, held in memory and read-only. Your repository is never called and your token
@@ -127,6 +140,11 @@ The two passwords then do different things:
 
 A guest can still browse every tab and play with the office — the jump buttons, the light
 switch, the whole floor — which is the part that shows the app off.
+
+There is **one password box**, not two. Whichever password is typed, the app tries the team
+blob and then the guest one; AES-GCM throws on the wrong key, so the same field is both the
+sign-in and the role check and neither password tells you anything about the other. When a
+guest password is set, the line under the box says so.
 
 **Why a second token rather than a setting.** The encrypted blob is published in `index.html`.
 Anyone with a password can decrypt their own half of it and read the token inside. If both
