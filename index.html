@@ -461,14 +461,23 @@ td.n,th.n{text-align:right;white-space:nowrap}
 
 /* ---- booking calendar ---- */
 .cal{padding:0 0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.calin{padding:0 12px 4px;min-width:640px}
+/* As wide as the days need, not a flat number. A month is 31 columns, and a flat 428px on a
+   phone made them ten pixels each — a quarter of a fingertip, so every tap landed two days
+   from where it was aimed and no drag could pick a day on purpose. --n is the day count, set
+   by the view; --dayw is the floor a column may shrink to. Where the total is under the frame
+   the strip just fills it, which is what a laptop does in both views. */
+.calin{padding:0 12px 4px;
+  min-width:calc(var(--nmw,132px) + var(--n,7) * var(--dayw,26px))}
 .prow{display:flex;align-items:stretch;border-bottom:.5px solid var(--hair)}
 .prow:last-child{border-bottom:0}
-.chead{position:sticky;top:0;z-index:3;background:var(--paper2);
+/* Above the ghost bar, which is z-index 5. Neither .prow nor .trk makes a stacking context, so
+   a ghost drawn mid-drag competes with these two directly — and once the month scrolls, it was
+   painting straight over the frozen name column and the date strip. */
+.chead{position:sticky;top:0;z-index:7;background:var(--paper2);
   border-bottom:var(--pbw) solid var(--edge)}
 .pnm{width:132px;flex:0 0 132px;padding:9px 10px;font-size:13.5px;font-weight:500;
   display:flex;align-items:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  position:sticky;left:0;z-index:2;background:var(--paper2)}
+  position:sticky;left:0;z-index:6;background:var(--paper2)}
 .chead .pnm{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--txt3)}
 .trk{position:relative;flex:1;min-height:44px;touch-action:none;cursor:crosshair}
 .trk.hd{min-height:40px}
@@ -631,6 +640,10 @@ td.n,th.n{text-align:right;white-space:nowrap}
   box-shadow:3px 3px 0 rgba(20,18,16,.26);scroll-snap-align:start;display:flex;
   flex-direction:column;overflow:hidden}
 .ofc-badge.out{opacity:.7}
+/* called out from the floor: the card is ringed for a moment rather than flashed, so it still
+   reads when the OS is asking for reduced motion */
+.ofc-badge{transition:box-shadow .2s}
+.ofc-badge.lit{box-shadow:0 0 0 3px var(--saffron),3px 3px 0 rgba(20,18,16,.26)}
 .ofc-bhd{display:flex;align-items:center;justify-content:space-between;padding:3px 5px;
   background:var(--saffron);border-bottom:2px solid #22201e;
   font:700 7.5px/1 var(--sans);letter-spacing:1px;color:#3a2f14}
@@ -641,7 +654,12 @@ td.n,th.n{text-align:right;white-space:nowrap}
    x 21.1, y 772, 85.7x100 of 512x1152. As percentages it is the same crop at any frame size -
    size = sheet/crop, position = origin/(sheet-crop) - so the phone and the desktop card share
    one set of numbers instead of two that have to be kept in step by hand. */
-.ofc-pph{display:block;width:66px;height:77px;background-repeat:no-repeat;image-rendering:pixelated;
+/* 100%, not the frame's own 66x77. Everything here is border-box, so a 66px frame with a 2px
+   ink border has a 62px hole in it — the portrait was drawn 66 wide inside it and the last four
+   pixels were clipped off the right, which slid the head two pixels right of centre. Two out of
+   sixty-two is easy to miss; two out of the phone's forty is what the eye catches. Filling the
+   hole needs no numbers and cannot drift out of step with the frame at the next breakpoint. */
+.ofc-pph{display:block;width:100%;height:100%;background-repeat:no-repeat;image-rendering:pixelated;
   background-size:597.33% 1152%;background-position:4.95% 73.384%}
 .ofc-bname{padding:6px 5px 2px;font:700 11px/1.15 var(--sans);color:#22201e;text-align:center;
   cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -720,7 +738,6 @@ td.n,th.n{text-align:right;white-space:nowrap}
   .ofc-badge{flex-basis:76px;width:76px}
   .ofc-face{padding-top:5px}
   .ofc-frame{width:44px;height:51px}
-  .ofc-pph{width:44px;height:51px}
   .ofc-rail{padding:8px 2px 3px;gap:8px}
   .ofc-bhd{font-size:6.5px;letter-spacing:.6px;padding:2px 5px}
   .ofc-bname{font-size:10px;padding:3px 4px 0}
@@ -795,8 +812,11 @@ select.c-av.av-busy{background-color:var(--fill2);border-color:var(--edge2);colo
 }
 /* taps shouldn't wait for a double-tap-to-zoom test */
 button,.chip,.cday,.mi,.pki,.bk,.seg button{touch-action:manipulation}
-/* the plan grid drags sideways but the page must still scroll up and down */
+/* The plan grid drags sideways but the page must still scroll up and down. The header is the
+   exception: it carries no data-p, nothing books from it, and it is the one surface wide enough
+   to grab — so dragging the date strip scrolls the month instead of booking anybody. */
 .trk{touch-action:pan-y}
+.trk.hd{touch-action:auto;cursor:grab}
 .cal,.scrollx,.calin{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
 
 @media (max-width:720px){
@@ -824,9 +844,10 @@ button,.chip,.cday,.mi,.pki,.bk,.seg button{touch-action:manipulation}
      status slab reads as more important than the developer's name beside it */
   select.c-st{width:auto;min-width:118px;max-width:150px}
 
-  /* plan: keep names visible, let the days scroll */
+  /* plan: keep names visible, let the days scroll. A finger is not a mouse pointer, so the
+     column floor goes up here and the month scrolls rather than shrinking to fit. */
   .pnm{width:92px;flex:0 0 92px;padding:8px;font-size:12.5px}
-  .calin{min-width:560px}
+  .calin{--nmw:92px;--dayw:38px}
   .bk{height:22px;font-size:11px}
   .gh{width:16px}
   .dcell b{font-size:13px}
@@ -845,7 +866,7 @@ button,.chip,.cday,.mi,.pki,.bk,.seg button{touch-action:manipulation}
   .menu{right:10px;left:10px;width:auto;top:52px}
 }
 @media (max-width:520px){
-  .calin{min-width:428px}
+  .calin{--nmw:78px}
   .pnm{width:78px;flex:0 0 78px;font-size:12px;padding:8px 6px}
   .dcell b{font-size:12px}
   .dcell span{font-size:8.5px}
@@ -2469,6 +2490,8 @@ function ticker(){
     <span class="uname">${esc(DB.user)}</span>`:'';
 }
 function render(){
+  /* read it before #main is replaced; vPlan puts it back */
+  if(view==='plan'){const c=$('.cal'); if(c)planScroll=c.scrollLeft}
   ticker();
   lockdown();
   $$('#segnav button,#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===view));
@@ -3124,10 +3147,13 @@ function clockLights(m){
   }
   if(litMode==='auto'&&LIT!==want)setLights(want,true);
 }
-/* what they are on today, straight off the board — the same row Today is typing into */
+/* What they are on today, straight off the board — the same row Today is typing into. "Not
+   assigned" is not a project whatever the project column happens to hold, so the card prints its
+   dash for it: the line is answering "what are they on", and the answer is nothing yet. */
 function projOf(pid){
   const r=DB.updates.find(u=>u.date===D.today()&&u.personId===pid);
-  return (r&&DB.projects.find(x=>x.id===r.projectId))||null;
+  if(!r||r.status==='unassigned')return null;
+  return DB.projects.find(x=>x.id===r.projectId)||null;
 }
 const castOf=()=>floorCast().map(p=>p.id+':'+(p.sprite==null?'':p.sprite)
                                   +':'+(p.desk===0?'m':'')).join('|');
@@ -3256,7 +3282,11 @@ function mount(){
     }else hold={lo:+b.dataset.lo,hi:+b.dataset.hi};
     simM=hold.lo;
   };
-  board.onclick=e=>{if(!ADMIN)return; const t=e.target.closest('[data-p]');if(t)openPerson(t.dataset.p)};
+  /* Tapping somebody on the floor goes to their card — the thing with their face on it, and
+     the thing they were just tapped on. It used to jump to the Standup tab, which is a
+     different screen answering a different question. A guest gets this too: the rail is not a
+     control for them, but finding the person they just tapped is not an edit. */
+  board.onclick=e=>{const t=e.target.closest('[data-p]');if(t)showCard(t.dataset.p)};
   $('.ofc-rail').onclick=e=>{
     const card=e.target.closest('[data-p]'); if(!card)return;
     const hit=e.target.closest('[data-act]');
@@ -3274,6 +3304,21 @@ function mount(){
   };
   stop(); last=performance.now(); raf=requestAnimationFrame(frame);
 }
+/* Bring somebody's card into view and mark it for a moment. The rail is a scroller, so the
+   card is very often off to one side of it; scrolling to the middle is what makes the tap feel
+   like it landed on the person rather than on the room. */
+function showCard(pid){
+  const rail=$('.ofc-rail'); if(!rail)return;
+  const card=[].slice.call(rail.children).filter(c=>c.dataset&&c.dataset.p===pid)[0];
+  if(!card)return;
+  const to=card.offsetLeft-(rail.clientWidth-card.offsetWidth)/2;
+  try{rail.scrollTo({left:to,behavior:'smooth'})}catch(e){rail.scrollLeft=to}
+  clearTimeout(showCard.t);
+  [].slice.call(rail.children).forEach(c=>c.classList.remove('lit'));
+  card.classList.add('lit');
+  showCard.t=setTimeout(()=>card.classList.remove('lit'),1600);
+}
+
 /* Tapping somebody only goes somewhere if Today has a row for them. */
 function openPerson(pid){
   if(!isGuest(pid))return goToPerson(pid);
@@ -3480,7 +3525,11 @@ function vToday(){
   const dt=D.p(day);
   const H=DETAILS?'':' hidden';
 
-  const prOpts=sel=>DB.projects.map(p=>`<option value="${p.id}" ${sel===p.id?'selected':''}>${esc(p.name)}</option>`).join('');
+  /* A blank first, so "no project yet" is a thing the column can say. Without it the select
+     had to show something, and what it showed was whichever project happened to be first —
+     so a row nobody had touched read as real work on a real client. */
+  const prOpts=sel=>`<option value=""${sel?'':' selected'}>—</option>`+
+    DB.projects.map(p=>`<option value="${p.id}" ${sel===p.id?'selected':''}>${esc(p.name)}</option>`).join('');
   const stOpts=sel=>STATUSES.map(s=>
     `<option value="${s}" ${sel===s?'selected':''}>${STSHORT[s]||s}</option>`).join('');
 
@@ -3493,9 +3542,9 @@ function vToday(){
           <button class="i rmdev" title="Remove ${esc(p.name)} from the team">✕</button></div>`}</td>
       <td data-l="Task" class="full tcell"><textarea class="c-tk" rows="1"
         placeholder="${ADMIN?(i?'Another task…':'Type today\u2019s update…'):'—'}">${esc(r?r.task:'')}</textarea></td>
-      <td data-l="Project"><select class="c-pr">${prOpts(r?r.projectId:(DB.projects[0]||{}).id)}</select></td>
+      <td data-l="Project"><select class="c-pr">${prOpts(r?r.projectId:'')}</select></td>
       <td data-l="Hours" class="n detcol${H}"><input class="c-es" type="number" step=".5" min="0" value="${r&&+r.est?+r.est:''}" placeholder="–"></td>
-      <td data-l="Status"><select class="c-st s-${r?r.status:'progress'}">${stOpts(r?r.status:'progress')}</select></td>
+      <td data-l="Status"><select class="c-st s-${r?r.status:'unassigned'}">${stOpts(r?r.status:'unassigned')}</select></td>
       <td class="n acts">
         <button class="i bul" title="Bullet list">•</button>
         <button class="i num" title="Numbered list">1.</button>
@@ -3574,7 +3623,19 @@ function vToday(){
       if(e.key==='Enter'&&!e.shiftKey)listEnter(e,ta);
     };
     tr.querySelector('.c-es').oninput=deb;
-    tr.querySelector('.c-pr').onchange=()=>cellCommit(tr,1);
+    /* "Not assigned" describes a row with no project on it, so choosing one answers that and
+       the status moves on rather than sitting there contradicting the column beside it — and
+       clearing the project puts it back, as long as nothing has been typed. This runs before
+       the commit, not after: the commit reads the status select, so changing it afterwards
+       left the screen and the record disagreeing. */
+    tr.querySelector('.c-pr').onchange=()=>{
+      const pr=tr.querySelector('.c-pr'), st=tr.querySelector('.c-st');
+      if(pr.value&&st.value==='unassigned')st.value='progress';
+      else if(!pr.value&&st.value==='progress'&&!tr.querySelector('.c-tk').value.trim())
+        st.value='unassigned';
+      st.className='c-st s-'+st.value;
+      cellCommit(tr,1);
+    };
     const st=tr.querySelector('.c-st');
     st.onchange=()=>{st.className='c-st s-'+st.value;cellCommit(tr,1)};
     tr.querySelector('.bul').onclick=()=>{toggleList(ta,'bul');commit()};
@@ -3842,6 +3903,8 @@ function personForm(){
 
 /* ==================== plan ==================== */
 let planView='week', anchor=null, DRAG=null, lastShift=0;
+/* where the day strip was scrolled to, carried across the render that replaces it */
+let planScroll=0;
 function planRange(){
   const t=D.today();
   if(!anchor)anchor=planView==='week'?D.monday(t):D.som(t);
@@ -3935,13 +3998,20 @@ function vPlan(){
       <button class="b s" id="pf" title="Forward">›</button>
       <button class="b s" id="pt">Today</button>
     </div>
-    <div class="cal"><div class="calin">
+    <div class="cal"><div class="calin" style="--n:${N}">
       <div class="prow chead"><div class="pnm">Developer</div><div class="trk hd">${head}</div></div>
       ${rows}
     </div></div>
     <div class="tips">Saturdays and Sundays are non-working — bookings skip them automatically. Drag across a row to book someone. Drag past the edge to carry on into the next week.
       Book the same person again to run projects side by side. Tap a booking to change or remove it.</div>
   </div>`;
+
+  /* Rebuilding #main throws the calendar away and the new one starts at scrollLeft 0. On a
+     laptop nothing overflows so nothing moved; on a phone the strip jumped back to the first
+     day on every render — and a drag renders on every column it crosses, so the days slid out
+     from under the finger holding them. That is the whole of "I press here and it books there".
+     Put it back before the frame is painted. */
+  if(planScroll){const c=$('.cal'); if(c)c.scrollLeft=planScroll; planScroll=0}
 
   $('#pv').onclick=e=>{const b=e.target.closest('button[data-v]');if(b){planView=b.dataset.v;anchor=null;render()}};
   $('#pb').onclick=()=>shiftPlan(-1);
@@ -3975,8 +4045,25 @@ document.addEventListener('pointermove',ev=>{
   const trk=document.querySelector(`#main .trk[data-p="${DRAG.pid}"]`);
   if(!trk)return;
   const r=trk.getBoundingClientRect(), now=Date.now();
-  if(ev.clientX>r.right-14&&now-lastShift>320){lastShift=now;shiftPlan(1);return}
-  if(ev.clientX<r.left+14&&now-lastShift>320){lastShift=now;shiftPlan(-1);return}
+  /* The edge that matters is the frame you can see, not the track. On a phone the track runs
+     off the side of the screen, so testing its own right edge meant dragging past the end of
+     the week never did anything at all. Scroll the strip while there is more of it, and only
+     turn the page once there is not. The name column is sticky, so the left edge of the days
+     is the frame plus its width. */
+  const cal=trk.closest('.cal'), fr=cal?cal.getBoundingClientRect():r;
+  const nmw=trk.previousElementSibling?trk.previousElementSibling.getBoundingClientRect().width:0;
+  /* Only in the direction you are actually travelling. Without that, a drag that merely starts
+     near an edge is swallowed by the edge behaviour before it books anything — and on a phone
+     the left edge sits fourteen pixels into the first visible day, so most drags started there. */
+  const dir=DRAG.lastX==null?0:ev.clientX-DRAG.lastX;
+  DRAG.lastX=ev.clientX;
+  if(dir>0&&ev.clientX>fr.right-14){
+    if(cal&&cal.scrollLeft+cal.clientWidth<cal.scrollWidth-1){cal.scrollLeft+=26;return}
+    if(now-lastShift>320){lastShift=now;shiftPlan(1);return}
+  }else if(dir<0&&ev.clientX<fr.left+nmw+14){
+    if(cal&&cal.scrollLeft>1){cal.scrollLeft-=26;return}
+    if(now-lastShift>320){lastShift=now;shiftPlan(-1);return}
+  }
   const {s:S,e:E}=planRange(), N=D.diff(S,E)+1;
   const i=Math.max(0,Math.min(N-1,Math.floor((ev.clientX-r.left)/(r.width/N))));
   const d=D.add(S,i);
