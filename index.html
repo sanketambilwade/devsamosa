@@ -1481,14 +1481,14 @@ const GHKEY='devsamosa:gh', SHFILE='shared.json';
    password is never stored anywhere. Regenerate with setup-shared-login.js.
    Left null until that has been run; the app then asks for repo + token
    per device, as before.                                                   */
-const GHENC={"salt":"t6XrtJnpisyDmIM5NV86wQ==","iv":"5VFv6j4I7AocjAiL","ct":"4Rn/wbG9MligtxXsa2X8XTq63kaTNVm95jw1HlwJ/O+FNqbjDDW8yP0ijaVj1P/2EG6MU2VL6ymiiW1yUVS5Z1FDOTYddIHDVhQYmhi7iGBlBXPLhEfhdzqFQ0bojl+tmF6rpn778rgLPouifHF0OrFO5K6kfnf/L4ug7bbbv6n2VK0pJOmxwnu6ftP/eUasShBfsVJ7SNiZkCDh/INxVesG9QkWYH1DqACx8zvQWQnNszUB1iI5qpvGZA==","it":600000};
+const GHENC={"salt":"hWTE8Bc6CQvaKxXN96IfXA==","iv":"LPFj/Cr23wNCXSma","ct":"fN+EiqTHmm2NkUgd8WgqBoDuFN4Xwva3aY77zibuKaGwvjGFTAhCIZfkEegnnYf+nOjsQWwfhFU1/lx4TKN6y6KsjYnPb/CvB89u2T/1uSQMqgAnTFrNyZCsDje+Ar70EI3Rdsjv801GULfVDJUH+EJwoT3Sz12Ok7eYp+61tHsHGcPf0jAySiL4ccMX7Nx7gnKpb0ps7IMUOs5Rtj/4u8Nr5U3uMz4LRSP5XicCaz+m4lRGiiZwxcrawQ==","it":600000};
 
 /* The guest half of the sign-in. Two passphrases, two sealed blobs, two GitHub tokens: the
    admin one can write, the guest one is a fine-grained PAT with Contents: Read, so GitHub
    itself refuses a guest's PUT. That is the security. Everything below about read-only mode is
    tidiness on top of it — a guest who opens devtools and lifts the token still gets a 403.
    null until setup-shared-login.js has been given a read-only token. */
-const GHVIEW={"salt":"Awr3svQJw79qFKe1zuhBfg==","iv":"pqZH6J5BzvlYNbtb","ct":"BstiWsj8mDDzUl+SfRKUUyfdjFifeYpV9BE=","it":600000};
+const GHVIEW={"salt":"Ll/ZQU6jAQMF6GZoH1d+cQ==","iv":"O1G7ymPdy5fZRP/2","ct":"p+qkng0gm0yu69ik8YRxFMwWpKt2F+PpQVg=","it":600000};
 /* The board a guest sees. Every name and project in here is invented, and has to be: this file
    is public, and the whole point of the sample board is that it can be handed to a stranger.
    For a trial it is also the better answer than the real one — somebody evaluating the tool
@@ -1819,7 +1819,11 @@ function inAppBrowser(){
 }
 /* the whole sign-in when a shared password has been baked in: one field, and
    getting it right is what produces the token in the first place */
-function ghTeamLock(){
+/* `why` is printed under the box. The one caller that passes it is the 401/403 path: a dead
+   token bounced here with a blank screen, so the password worked, the board did not, and it
+   bounced again — an endless loop that reads as "the app will not open". Say what happened,
+   because retyping the password cannot fix a credential that has expired. */
+function ghTeamLock(why){
   $('#app').classList.add('hidden');$('#tabs').classList.add('hidden');
   $('#lock').classList.remove('hidden');
   $('#lock').innerHTML=`<div class="lockcard" id="lc">${markSVG('mark')}
@@ -1837,6 +1841,7 @@ function ghTeamLock(){
       sees the same board.${GHVIEW?' A guest password opens a sample board to look round.':''}
       <a href="#" id="own">Use this device only</a></p>
   </div>`;
+  if(why)$('#err').textContent=why;
   const fail=m=>{$('#err').textContent=m;$('#lc').classList.remove('shake');
     void $('#lc').offsetWidth;$('#lc').classList.add('shake')};
   $$('#lock .pweye').forEach(b=>b.onclick=()=>{const f=$('#'+b.dataset.f);
@@ -2045,7 +2050,9 @@ async function ghStart(){
     else if(GHENC)ghPinBox()?ghPinLock():ghTeamLock();
     else lockScreen();
   }catch(e){
-    if(GHENC&&(e.status===401||e.status===403)){ghForget();ghPinForget();ghMemForget();return ghTeamLock()}
+    if(GHENC&&(e.status===401||e.status===403)){ghForget();ghPinForget();ghMemForget();
+      return ghTeamLock('The board’s GitHub access has expired. The password is still right — '+
+        'whoever set this up needs to issue a new token.')}
     ghConnect();
     setTimeout(()=>{const el=$('#err');if(el)el.textContent=
       e.status===401?'That token was rejected. It may have expired — paste a new one.'

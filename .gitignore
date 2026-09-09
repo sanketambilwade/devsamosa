@@ -3,7 +3,9 @@
 # The board itself lives in the separate PRIVATE devsamosa-data repo. See GITHUB-SETUP.md.
 
 # Project notes: names real clients and team process. Never publish.
+# Both names: some agents read AGENTS.md, and it is the same file with the same roster in it.
 CLAUDE.md
+AGENTS.md
 
 # The starter roster: 18 real developers and 13 client project names.
 # This is what you restore from on first setup. It must never be published.
